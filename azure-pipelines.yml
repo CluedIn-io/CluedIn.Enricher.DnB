@@ -1,0 +1,142 @@
+parameters:
+  - name: configuration
+    type: string
+    displayName: The build configuration for dotnet
+    default: Release
+  - name: version
+    type: string
+    displayName: The version to be passed to Dotnet
+    default: ''
+  - name: rootDir
+    type: string
+    displayName: The root directory for build source files
+    default: $(Build.SourcesDirectory)
+  - name: artifactsDir
+    type: string
+    displayName: The root directory for build artifacts
+    default: $(Build.ArtifactStagingDirectory)
+  - name: preBuild
+    type: stepList
+    displayName: Additional steps to run before build
+    default: []
+  - name: postBuild
+    type: stepList
+    displayName: Additional steps to run after build but before test
+    default: []
+  - name: testsEnabled
+    default: true
+    displayName: Set to false to disable test tasks
+  - name: postTest
+    type: stepList
+    displayName: Additional steps to run after test but before pack
+    default: []
+  - name: postPack
+    type: stepList
+    displayName: Additional steps to run after pack
+    default: [] 
+
+jobs:
+  - job: job_cluedin_build
+    displayName: CluedIn Build
+
+    pool:
+      vmImage: ubuntu-latest
+
+    variables:
+      - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+        value: 'true'
+      - name: DOTNET_CLI_TELEMETRY_OPTOUT
+        value: 'true'
+      - name: disable.coverage.autogenerate
+        value: 'true'
+      - name: logsDir
+        value: ${{ parameters.artifactsDir }}/logs
+      - name: nugetDir
+        value: ${{ parameters.artifactsDir }}/nuget
+      - name: testsDir
+        value: ${{ parameters.artifactsDir }}/tests
+
+    steps:
+
+      - task: UseDotNet@2
+        displayName: Set Dotnet SDK
+        inputs:
+          packageType: 'sdk'
+          useGlobalJson: true
+
+      - script: |
+          dotnetDefaults='${{ parameters.rootDir }} -c ${{ parameters.configuration }}'
+          if [ -n '${{ parameters.version }}' ]; then
+            dotnetDefaults="$dotnetDefaults /p:Version=${{ parameters.version }}"
+          fi
+          echo $dotnetDefaults
+          echo "##vso[task.setvariable variable=dotnetDefaults]$dotnetDefaults"
+        displayName: Set Dotnet Defaults
+
+      - ${{ each step in parameters.preBuild }}:
+        - ${{ each pair in step }}:
+            ${{ pair.key }}: ${{ pair.value }}
+      
+      
+      - script: dotnet build $(dotnetDefaults) /bl:$(logsDir)/build.binlog
+        displayName: Dotnet Build
+
+      - ${{ each step in parameters.postBuild }}:
+          - ${{ each pair in step }}:
+              ${{ pair.key }}: ${{ pair.value }}
+
+      - ${{ if eq(parameters.testsEnabled, true) }}:
+
+        - script: dotnet test $(dotnetDefaults) --no-build /bl:$(logsDir)/test.binlog -r $(testsDir)/Unit --logger trx --collect:"XPlat Code Coverage"
+          displayName: Dotnet Test
+
+        - ${{ each step in parameters.postTest }}:
+            - ${{ each pair in step }}:
+                ${{ pair.key }}: ${{ pair.value }}
+
+        - task: PublishTestResults@2
+          displayName: Publish Tests
+          condition: succeededOrFailed()
+          continueOnError: true
+          inputs:
+            testResultsFormat: 'VSTest'
+            testResultsFiles: '**/*.trx'
+            searchFolder: $(testsDir)
+            testRunTitle: Unit Tests
+
+        - task: PublishCodeCoverageResults@1
+          displayName: Publish Coverage Report
+          condition: succeededOrFailed()
+          inputs:
+            codeCoverageTool: Cobertura
+            summaryFileLocation: '$(testsDir)/coveragereport/Cobertura.xml'
+            reportDirectory: '$(testsDir)/coveragereport'
+            
+
+      - script: dotnet pack $(dotnetDefaults) --version-suffix $(build.buildnumber) -o $(nugetDir) --no-build /bl:$(logsDir)/pack.binlog
+        displayName: Dotnet Pack
+
+      - ${{ each step in parameters.postPack }}:
+          - ${{ each pair in step }}:
+              ${{ pair.key }}: ${{ pair.value }}
+
+      - publish: $(logsDir)
+        displayName: Publish Logs
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: logs
+
+      - publish: $(nugetDir)
+        displayName: Publish Nuget
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: nuget
+        
+      - task: NuGetAuthenticate@0
+        displayName: 'NuGet Authenticate'
+      - task: NuGetCommand@2
+        displayName: 'NuGet push'
+        inputs:
+          command: push
+          publishVstsFeed: 'BarentzMDM'
+          allowPackageConflicts: true

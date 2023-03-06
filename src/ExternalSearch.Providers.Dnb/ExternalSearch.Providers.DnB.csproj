@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Compile Remove="Provider.ExternalSearch.DnB\**" />
+    <EmbeddedResource Remove="Provider.ExternalSearch.DnB\**" />
+    <None Remove="Provider.ExternalSearch.DnB\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\dnb.svg" />
+  </ItemGroup>
+   <ItemGroup>
+    <PackageReference Include="CluedIn.Core" />
+    <PackageReference Include="CluedIn.ExternalSearch" />
+    <PackageReference Include="CluedIn.Processing" />
+    <PackageReference Include="CluedIn.Processing.Web" />
+    <PackageReference Include="CluedIn.Processing.Web.TechnologyDetection" />
+    <PackageReference Include="Humanizer.Core" />
+  </ItemGroup>
+</Project>
