@@ -38,14 +38,14 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 new Control()
                 {
                     displayName = "API Key",
-                    type = "input",
+                    type = "password",
                     isRequired = true,
                     name = KeyName.AuthKey
                 },
                 new Control()
                 {
                     displayName = "API Secret",
-                    type = "input",
+                    type = "password",
                     isRequired = true,
                     name = KeyName.AuthSecret
                 },
