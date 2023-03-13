@@ -8,7 +8,10 @@ namespace CluedIn.ExternalSearch.Providers.DnB.Vocabularies
         static StaticDnBVocabulary()
         {
             BusinessPartner = new DnBVocabulary();
+            Industry = new IndustryVocabulary();
         }
         public static DnBVocabulary BusinessPartner { get; private set; }
+
+        public static IndustryVocabulary Industry { get; private set; }
     }
 }
