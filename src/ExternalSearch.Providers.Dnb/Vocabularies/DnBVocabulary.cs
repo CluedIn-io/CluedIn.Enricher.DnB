@@ -15,15 +15,6 @@ namespace CluedIn.ExternalSearch.Providers.DnB.Vocabularies
             AddGroup("D&B Information", group =>
             {
                 Duns = group.Add(new VocabularyKey(nameof(Duns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible).WithDisplayName("D-U-N-S Number"));
-                //MailingAddressCountry = group.Add(new VocabularyKey(nameof(MailingAddressCountry), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressCountryCode = group.Add(new VocabularyKey(nameof(MailingAddressCountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressLocality = group.Add(new VocabularyKey(nameof(MailingAddressLocality), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressRegionAbbreviatedName = group.Add(new VocabularyKey(nameof(MailingAddressRegionAbbreviatedName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressRegionName = group.Add(new VocabularyKey(nameof(MailingAddressRegionName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressPostalCode = group.Add(new VocabularyKey(nameof(MailingAddressPostalCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressAddressLine1 = group.Add(new VocabularyKey(nameof(MailingAddressAddressLine1), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                //MailingAddressAddressLine2 = group.Add(new VocabularyKey(nameof(MailingAddressAddressLine2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
-                MatchConfidenceCode = group.Add(new VocabularyKey(nameof(MatchConfidenceCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
                 DomesticUltimateDuns = group.Add(new VocabularyKey(nameof(DomesticUltimateDuns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible)).WithDisplayName("Domestic Ultimate D-U-N-S Number");
                 GlobalUltimateDuns = group.Add(new VocabularyKey(nameof(GlobalUltimateDuns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible)).WithDisplayName("Global Ultimate D-U-N-S Number");
                 OperatingStatusCode = group.Add(new VocabularyKey(nameof(OperatingStatusCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
@@ -41,18 +32,22 @@ namespace CluedIn.ExternalSearch.Providers.DnB.Vocabularies
                 PrimaryAddressStreetLine2 = group.Add(new VocabularyKey(nameof(PrimaryAddressStreetLine2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
                 WebsiteUrl = group.Add(new VocabularyKey(nameof(WebsiteUrl), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
                 RegistrationNumber2 = group.Add(new VocabularyKey(nameof(RegistrationNumber2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusFullReportDate = group.Add(new VocabularyKey(nameof(DunsControlStatusFullReportDate), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusLastUpdateDate = group.Add(new VocabularyKey(nameof(DunsControlStatusLastUpdateDate), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusOperatingStatusDescription = group.Add(new VocabularyKey(nameof(DunsControlStatusOperatingStatusDescription), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusOperatingStatusDnbCode = group.Add(new VocabularyKey(nameof(DunsControlStatusOperatingStatusDnbCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusIsMarketable = group.Add(new VocabularyKey(nameof(DunsControlStatusIsMarketable), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusIsMailUndeliverable = group.Add(new VocabularyKey(nameof(DunsControlStatusIsMailUndeliverable), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusIsTelephoneDisconnected = group.Add(new VocabularyKey(nameof(DunsControlStatusIsTelephoneDisconnected), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusIsDelisted = group.Add(new VocabularyKey(nameof(DunsControlStatusIsDelisted), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                DunsControlStatusSubjectHandlingDetails = group.Add(new VocabularyKey(nameof(DunsControlStatusSubjectHandlingDetails), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                BusinessEntityTypeDnbCode = group.Add(new VocabularyKey(nameof(BusinessEntityTypeDnbCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                BusinessEntityTypeDescription = group.Add(new VocabularyKey(nameof(BusinessEntityTypeDescription), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+                MatchConfidenceCode = group.Add(new VocabularyKey(nameof(MatchConfidenceCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             });
 
         }
         public VocabularyKey Duns { get; protected set; }
-        //public VocabularyKey MailingAddressCountry { get; protected set; }
-        //public VocabularyKey MailingAddressCountryCode { get; protected set; }
-        //public VocabularyKey MailingAddressLocality { get; protected set; }
-        //public VocabularyKey MailingAddressRegionAbbreviatedName { get; protected set; }
-        //public VocabularyKey MailingAddressRegionName { get; protected set; }
-        //public VocabularyKey MailingAddressPostalCode { get; protected set; }
-        //public VocabularyKey MailingAddressAddressLine1 { get; protected set; }
-        //public VocabularyKey MailingAddressAddressLine2 { get; protected set; }
         public VocabularyKey MatchConfidenceCode { get; protected set; }
         public VocabularyKey PrimaryBusinessName { get; protected set; }
         public VocabularyKey ISO2CountryCode { get; protected set; }
@@ -71,5 +66,20 @@ namespace CluedIn.ExternalSearch.Providers.DnB.Vocabularies
         public VocabularyKey PrimaryAddressStreetLine2 { get; protected set; }
         public VocabularyKey WebsiteUrl { get; protected set; }
         public VocabularyKey RegistrationNumber2 { get; protected set; }
+        public VocabularyKey DunsControlStatusFullReportDate { get; protected set; }
+        public VocabularyKey DunsControlStatusLastUpdateDate { get; protected set; }
+        public VocabularyKey DunsControlStatusOperatingStatusDescription { get; protected set; }
+        public VocabularyKey DunsControlStatusOperatingStatusDnbCode { get; protected set; }
+        public VocabularyKey DunsControlStatusIsMarketable { get; protected set; }
+        public VocabularyKey DunsControlStatusIsMailUndeliverable { get; protected set; }
+        public VocabularyKey DunsControlStatusIsTelephoneDisconnected { get; protected set; }
+        public VocabularyKey DunsControlStatusIsDelisted { get; protected set; }
+        public VocabularyKey DunsControlStatusSubjectHandlingDetails { get; protected set; }
+        public VocabularyKey BusinessEntityTypeDnbCode { get; protected set; }
+        public VocabularyKey BusinessEntityTypeDescription { get; protected set; }
+
     }
 }
+
+
+
