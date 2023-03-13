@@ -8,7 +8,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public DnBExternalSearchJobData(IDictionary<string, object> configuration)
         {
             AcceptedEntityType = GetValue<string>(configuration, DnBConstants.KeyName.AcceptedEntityType);
-            OrgNameKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgNameKey);
+            OrgNameKey = GetValue<string>(configuration, DnBConstants.KeyName.DunsNumberKey);
             OrgAddressKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgAddressKey);
             OrgCountryCodeKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgCountryCodeKey);
             AuthUrl = GetValue<string>(configuration, DnBConstants.KeyName.AuthUrl);
@@ -23,7 +23,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             //return new Dictionary<string, object>();
             return new Dictionary<string, object> {
                 { DnBConstants.KeyName.AcceptedEntityType, AcceptedEntityType },
-                { DnBConstants.KeyName.OrgNameKey, OrgNameKey },
+                { DnBConstants.KeyName.DunsNumberKey, OrgNameKey },
                 { DnBConstants.KeyName.OrgAddressKey, OrgAddressKey },
                 { DnBConstants.KeyName.OrgCountryCodeKey, OrgCountryCodeKey },
                 { DnBConstants.KeyName.AuthUrl, AuthUrl },

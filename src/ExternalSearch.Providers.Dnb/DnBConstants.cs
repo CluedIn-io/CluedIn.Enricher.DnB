@@ -14,7 +14,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         {
             public const string ApiToken = "apiToken";
             public const string AcceptedEntityType = "acceptedEntityType";
-            public const string OrgNameKey = "orgNameKey";
+            public const string DunsNumberKey = "orgNameKey";
             public const string OrgAddressKey = "orgAddressKey";
             public const string OrgCountryCodeKey = "orgCountryCodeKey";
             public const string AuthUrl = "DNB_AUTH_URL";
@@ -75,7 +75,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                     displayName = "Organization Name vocab key",
                     type = "input",
                     isRequired = false,
-                    name = KeyName.OrgNameKey
+                    name = KeyName.DunsNumberKey
                 },
                 new Control()
                 {
