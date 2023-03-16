@@ -228,52 +228,58 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             //Create all Companies from Ultimate and Global Parents
             if (resultItem.Data.organization.corporateLinkage.domesticUltimate != null)
             {
-                var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.domesticUltimate.duns);
-                var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
+                if (resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress != null)
+                {
+                    var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.domesticUltimate.duns);
+                    var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
 
-                //metadata.OutgoingEdges.Add();
-                domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
-                //TODO: add Name
-                domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryName;
-                domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
+                    //metadata.OutgoingEdges.Add();
+                    domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
+                    //TODO: add Name
+                    domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryName;
+                    domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
 
-                domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
+                    domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
 
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressCountry.name;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressCounty.name;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressLocality.name;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.postalCode;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressRegion.name;
-                //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.;
-                //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressCountry.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressCounty.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressLocality.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.postalCode;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressRegion.name;
+                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.;
+                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.name;
 
 
-                yield return domesticUltimateClue;
+                    yield return domesticUltimateClue;
+                }
             }
 
             if (resultItem.Data.organization.corporateLinkage.globalUltimate != null)
             {
-                var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.globalUltimate.duns);
-                var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
+                if (resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress != null)
+                {
+                    var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.globalUltimate.duns);
+                    var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
 
-                //metadata.OutgoingEdges.Add();
-                domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
-                //TODO: add Name
-                domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryName;
-                domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
+                    //metadata.OutgoingEdges.Add();
+                    domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
+                    //TODO: add Name
+                    domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryName;
+                    domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
 
-                domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
+                    domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
 
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressCountry.name;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressCounty.name;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressLocality.name;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.postalCode;
-                domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressRegion.name;
-                //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.;
-                //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressCountry.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressCounty.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressLocality.name;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.postalCode;
+                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressRegion.name;
+                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.;
+                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.name;
 
 
-                yield return domesticUltimateClue;
+                    yield return domesticUltimateClue;
+                }
             }
 
 
@@ -296,8 +302,8 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
                     industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Description] = industryCode.description;
                     industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.TypeDescription] = industryCode.typeDescription;
-                    industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.TypeDnBCode] = industryCode.typeDnBCode.ToString();
-                    industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Priority] = industryCode.priority.ToString();
+                    industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.TypeDnBCode] = industryCode.typeDnBCode.PrintIfAvailable();
+                    industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Priority] = industryCode.priority.PrintIfAvailable();
                     industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Code] = industryCode.code;
 
                     yield return industryClue;
@@ -310,7 +316,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
             // TODO: If necessary, you can create multiple clues and return them.
 
-            yield return clue ;
+            yield return clue;
         }
 
         /// <summary>Gets the primary entity metadata.</summary>
@@ -389,26 +395,30 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
             metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(domesticCode), "/DomesticUltimateParent"));
             metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(globalCode), "/GlobalUltimateParent"));
+            if (resultItem.Data.organization.dunsControlStatus != null)
+            {
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusFullReportDate] = resultItem.Data.organization.dunsControlStatus.fullReportDate;
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusLastUpdateDate] = resultItem.Data.organization.dunsControlStatus.lastUpdateDate;
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus.description;
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDnbCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus.dnbCode.PrintIfAvailable();
 
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusFullReportDate] = resultItem.Data.organization.dunsControlStatus.fullReportDate;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusLastUpdateDate] = resultItem.Data.organization.dunsControlStatus.lastUpdateDate;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus.description;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDnbCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus.dnbCode.ToString();
-
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMarketable] = resultItem.Data.organization.dunsControlStatus.isMarketable.ToString();
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMailUndeliverable] = resultItem.Data.organization.dunsControlStatus.isMailUndeliverable.ToString();
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsTelephoneDisconnected] = resultItem.Data.organization.dunsControlStatus.isTelephoneDisconnected.ToString();
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsDelisted] = resultItem.Data.organization.dunsControlStatus.isDelisted.ToString();
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusSubjectHandlingDetails] = resultItem.Data.organization.dunsControlStatus.subjectHandlingDetails.ToString();
-
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMarketable] = resultItem.Data.organization.dunsControlStatus.isMarketable.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMailUndeliverable] = resultItem.Data.organization.dunsControlStatus.isMailUndeliverable.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsTelephoneDisconnected] = resultItem.Data.organization.dunsControlStatus.isTelephoneDisconnected.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsDelisted] = resultItem.Data.organization.dunsControlStatus.isDelisted.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusSubjectHandlingDetails] = resultItem.Data.organization.dunsControlStatus.subjectHandlingDetails.PrintIfAvailable();
+                if (resultItem.Data.organization.dunsControlStatus.operatingStatus != null)
+                {
+                    // Operating Status
+                    metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus.dnbCode.PrintIfAvailable();
+                    metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus.description.PrintIfAvailable();
+                }
+            }
             // DUNS Numbers
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.Duns] = resultItem.Data.organization.duns;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateDuns] = domesticUltimateDuns;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateDuns] = globalUltimateDuns;
 
-            // Operating Status
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus.dnbCode.ToString();
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus.description.ToString();
 
             //resultItem.Data.organization.telephone
 
@@ -431,7 +441,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                     metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(industryEntityCode), "/IndustrySic"));
                 }
 
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDnbCode] = resultItem.Data.organization.businessEntityType.dnbCode.ToString();
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDnbCode] = resultItem.Data.organization.businessEntityType.dnbCode.PrintIfAvailable();
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization.businessEntityType.description;
         }
 
