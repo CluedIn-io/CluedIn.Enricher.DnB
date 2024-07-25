@@ -32,8 +32,8 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
         public string About => "Dun & Bradstreet is global provider of business decisioning data and analytics.";
 
-        public AuthMethods AuthMethods { get; } = null;
-        public IEnumerable<Control> Properties { get; } = null;
+        public AuthMethods AuthMethods { get; } = DnBConstants.AuthMethods;
+        public IEnumerable<Control> Properties { get; } = new List<Control>();
         public Guide Guide { get; } = null;
         public IntegrationType Type { get; } = IntegrationType.Enrichment;
 
