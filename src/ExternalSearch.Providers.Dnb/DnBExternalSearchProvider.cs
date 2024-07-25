@@ -24,7 +24,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
     /// <seealso cref="CluedIn.ExternalSearch.ExternalSearchProviderBase" />
     public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEnricherMetadata, IConfigurableExternalSearchProvider
     {
-        public static readonly Guid ProviderId = Guid.Parse("31d78803-3a06-45a7-9ef2-4179b8242fbf");   // TODO: Replace value
+        public static readonly Guid ProviderId = Guid.Parse("31d78803-3a06-45a7-9ef2-4179b8242fbf");
 
         public string Icon => "Resources.dnb.svg";
 
@@ -42,39 +42,10 @@ namespace CluedIn.ExternalSearch.Providers.DnB
          * CONSTRUCTORS
          **********************************************************************************************************/
 
-        //public DnBExternalSearchProvider()
-        //    : base(ProviderId, "/BusinessPartner")
-        //{
-        //}
-
-
         public DnBExternalSearchProvider()
            : base(ProviderId, DefaultAcceptedEntityTypes)
         {
-            var nameBasedTokenProvider = new NameBasedTokenProvider("DnB");
-
-            if (nameBasedTokenProvider.ApiToken != null)
-                this.TokenProvider = new RoundRobinTokenProvider(nameBasedTokenProvider.ApiToken.Split(',', ';'));
         }
-
-        public DnBExternalSearchProvider(IList<string> tokens)
-            : this(true)
-        {
-            this.TokenProvider = new RoundRobinTokenProvider(tokens);
-        }
-
-        public DnBExternalSearchProvider(IExternalSearchTokenProvider tokenProvider)
-            : this(true)
-        {
-            this.TokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
-        }
-
-        private DnBExternalSearchProvider(bool tokenProviderIsRequired)
-            : base(ProviderId, DefaultAcceptedEntityTypes)
-        {
-            this.TokenProviderIsRequired = tokenProviderIsRequired;
-        }
-
 
         /**********************************************************************************************************
          * METHODS
