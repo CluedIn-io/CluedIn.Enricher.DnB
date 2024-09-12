@@ -86,6 +86,8 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             if (!this.Accepts(config, request.EntityMetaData.EntityType))
                 yield break;
 
+            var jobData = new DnBExternalSearchJobData(config);
+
             // Query Input
             //For companies use CluedInOrganization vocab, for people use CluedInPerson and so on for different types.
             var entityType = request.EntityMetaData.EntityType;
@@ -98,25 +100,65 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 {
                     yield return new ExternalSearchQuery(this, entityType, new Dictionary<string, string>() { { "id", value } });
                 }
-                //yield return new ExternalSearchQuery(this, entityType, ExternalSearchQueryParameter.Name, value);
             }
+
+            var orgName        = GetValue(request, config, DnBConstants.KeyName.OrgNameKey,        Core.Data.Vocabularies.Vocabularies.CluedInOrganization.OrganizationName)  ?.FirstOrDefault();
+            var orgCountryCode = GetValue(request, config, DnBConstants.KeyName.OrgCountryCodeKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressCountryCode)?.FirstOrDefault();
+
+            var orgNameAndCountry     = !string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode);
+            var versionIdAndProductId = !string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId);
+            var blockIds              = !string.IsNullOrWhiteSpace(jobData.BlockIds);
+
+            if (orgNameAndCountry && (versionIdAndProductId || blockIds))
+            {
+                yield return new ExternalSearchQuery(this, entityType, new Dictionary<string, string>() { { DnBConstants.KeyName.OrgNameKey, orgName }, { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode } } );
+            }
+
         }
 
         private static IEnumerable<IExternalSearchQueryResult> InternalExecuteSearch(IExternalSearchQuery query, DnBExternalSearchJobData jobData)
         {
-
             //TODO: replace hardcoded value
             var token = GetAuthToken(jobData);
-            var dunsNumber = query.QueryParameters["id"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(dunsNumber))
-                yield break;
+            var dunsNumber      = query.QueryParameters.GetValue("id")?.FirstOrDefault();
+            var orgName         = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgNameKey)?.FirstOrDefault();
+            var orgCountryCode  = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgCountryCodeKey)?.FirstOrDefault();
 
             var client = new RestClient(jobData.DnBBaseUrl);
 
+            RestRequest request;
+            if (!string.IsNullOrEmpty(dunsNumber))
+            {
+                var requestResource = $"data/duns/{dunsNumber}?productId=cmpelk&versionId=v1";
+                request = new RestRequest(requestResource, Method.GET);
+            }
+            else if (!string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode))
+            {
+                var requestResource = $"match/extendedMatch";
+                request = new RestRequest(requestResource, Method.GET);
+                if ((!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId)))
+                {
+                    request.AddQueryParameter("versionId", jobData.VersionId);
+                    request.AddQueryParameter("productId", jobData.ProductId);
+                }
+                else if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
+                {
+                    request.AddQueryParameter("blockIds", jobData.BlockIds);
+                }
+                else
+                {
+                    throw new Exception("Could not execute external search query - Either productId & versionId or blockIDs must be specified.");
+                }
+
+                request.AddQueryParameter("name", orgName);
+                request.AddQueryParameter("countryISOAlpha2Code", orgCountryCode);
+            }
+            else
+            {
+                throw new Exception("Could not execute external search query - name and countryISOAlpha2Code must be specified.");
+            }
+
             //TODO: Request
-            var requestResource = $"data/duns/{dunsNumber}?productId=cmpelk&versionId=v1";
-            var request = new RestRequest(requestResource, Method.GET);
             request.AddHeader("Authorization", $"Bearer {token}");
 
             var cleanseResponse = client.ExecuteAsync<DNBResponse>(request).Result;
@@ -125,9 +167,12 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             {
                 if (cleanseResponse.Data != null)
                 {
-
-                    yield return new ExternalSearchQueryResult<DNBResponse>(query, cleanseResponse.Data);
-
+                    var organization = cleanseResponse.Data.organization ?? cleanseResponse.Data.embeddedProduct.organization;
+                    if (organization != null)
+                    {
+                        cleanseResponse.Data.organization = organization;
+                        yield return new ExternalSearchQueryResult<DNBResponse>(query, cleanseResponse.Data);
+                    }
                 }
             }
             else if (cleanseResponse.StatusCode == HttpStatusCode.NoContent || cleanseResponse.StatusCode == HttpStatusCode.NotFound)

@@ -286,6 +286,76 @@ namespace CluedIn.ExternalSearch.Providers.DnB.Models
         public TransactionDetail transactionDetail { get; set; }
         public InquiryDetail inquiryDetail { get; set; }
         public Organization organization { get; set; }
+
+        public long? candidatesMatchedQuantity { get; set; }
+        public string matchDataCriteria { get; set; }
+        public List<MatchCandidate> matchCandidates { get; set; }
+        public CleanseAndStandardizeInformation cleanseAndStandardizeInformation { get; set; }
+        public EmbeddedProduct embeddedProduct { get; set; }
+        public Error error { get; set; }
+    }
+
+    public class Error
+    {
+        public string errorCode { get; set; }
+        public string errorMessage { get; set; }
+        public Errordetail[] errorDetails { get; set; }
+    }
+
+    public class Errordetail
+    {
+        public string parameter { get; set; }
+        public string description { get; set; }
+    }
+
+    public class CleanseAndStandardizeInformation
+    {
+
+    }
+    public class EmbeddedProduct
+    {
+        public Organization organization { get; set; }
+        public List<string> blockIDs { get; set; }
+        public string inLanguage { get; set; }
+        public List<BlockStatus> blockStatus { get; set; }
+    }
+
+    public class BlockStatus
+    {
+        public string blockID { get; set; }
+        public string status { get; set; }
+        public object reason { get; set; }
+    }
+
+    public class MatchCandidate
+    {
+        public long? displaySequence { get; set; }
+        public Organization organization { get; set; }
+        public MatchQualityInformation matchQualityInformation { get; set; }
+    }
+
+    public class MatchQualityInformation
+    {
+        public long? confidenceCode { get; set; }
+        public string matchGrade { get; set; }
+        public long? matchGradeComponentsCount { get; set; }
+        public List<MatchGradeComponent> MatchGradeComponents { get; set; }
+        public string matchDataProfile { get; set; }
+        public long? matchDataProfileComponentsCount { get; set; }
+        public List<MatchDataProfileComponent> matchDataProfileComponents { get; set; }
+        public long? nameMatchScore { get; set; }
+    }
+
+    public partial class MatchDataProfileComponent
+    {
+        public string componentType { get; set; }
+        public string componentValue { get; set; }
+    }
+
+    public partial class MatchGradeComponent
+    {
+        public string componentType { get; set; }
+        public string componentRating { get; set; }
     }
 
     public class SocioEconomicInformation

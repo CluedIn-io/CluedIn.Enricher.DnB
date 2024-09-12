@@ -14,7 +14,8 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         {
             public const string ApiToken = "apiToken";
             public const string AcceptedEntityType = "acceptedEntityType";
-            public const string DunsNumberKey = "orgNameKey";
+            public const string DunsNumberKey = "dunsNumberKey";
+            public const string OrgNameKey = "orgNameKey";
             public const string OrgAddressKey = "orgAddressKey";
             public const string OrgCountryCodeKey = "orgCountryCodeKey";
             public const string AuthUrl = "DNB_AUTH_URL";
@@ -22,6 +23,10 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             public const string AuthSecret = "DNB_AUTH_SECRET";
             public const string AuthRequestBody = "DNB_AUTH_REQUEST_BODY";
             public const string DnBBaseUrl = "DNB_BASE_URL";
+            // Match and Append https://directplus.documentation.dnb.com/openAPI.html?apiID=IDRExtendedMatch
+            public const string VersionId = "versionId";
+            public const string ProductId = "productId";
+            public const string BlockIds = "blockIDs";
         }
 
         public static AuthMethods AuthMethods { get; set; } = new AuthMethods
@@ -75,6 +80,13 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                     displayName = "Organization Name vocab key",
                     type = "input",
                     isRequired = false,
+                    name = KeyName.OrgNameKey
+                },
+                new Control()
+                {
+                    displayName = "DUNS vocab key",
+                    type = "input",
+                    isRequired = false,
                     name = KeyName.DunsNumberKey
                 },
                 new Control()
@@ -84,14 +96,35 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                     isRequired = false,
                     name = KeyName.OrgAddressKey
                 },
-
                 new Control()
                 {
                     displayName = "Organization Country Code vocab key",
                     type = "input",
                     isRequired = false,
                     name = KeyName.OrgCountryCodeKey
-                }
+                },
+                // Match and Append 
+                new Control()
+                {
+                    displayName = $"Match and Append {KeyName.VersionId}",
+                    type = "input",
+                    isRequired = false,
+                    name = KeyName.VersionId
+                },
+                new Control()
+                {
+                    displayName = $"Match and Append {KeyName.ProductId}",
+                    type = "input",
+                    isRequired = false,
+                    name = KeyName.ProductId
+                },
+                new Control()
+                {
+                    displayName = $"Match and Append {KeyName.BlockIds}",
+                    type = "input",
+                    isRequired = false,
+                    name = KeyName.BlockIds
+                },
             }
         };
     }
