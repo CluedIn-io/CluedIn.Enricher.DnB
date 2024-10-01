@@ -143,7 +143,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 }
                 else if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
                 {
-                    request.AddQueryParameter("blockIds", jobData.BlockIds);
+                    request.AddQueryParameter("blockIDs", jobData.BlockIds);
                 }
                 else
                 {
