@@ -305,14 +305,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
             if (resultItem.Data.organization.primaryAddress != null)
             {
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.primaryAddress.addressCountry?.name.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.ISO2CountryCode] = resultItem.Data.organization.primaryAddress.addressCountry?.isoAlpha2Code.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.primaryAddress.addressLocality?.name.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionAbbreviatedName] = resultItem.Data.organization.primaryAddress.addressRegion?.abbreviatedName.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.primaryAddress.addressRegion?.name.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.primaryAddress.postalCode.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.primaryAddress.streetAddress?.line1.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.primaryAddress.streetAddress?.line2.PrintIfAvailable();
+                PopulatePrimaryAddress(metadata, resultItem.Data.organization.primaryAddress);
             }
 
             //metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = resultItem.Data.organization.websiteAddress.First()..PrintIfAvailable();
@@ -388,14 +381,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
                     domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
 
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressCountry.name;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressCounty.name;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressLocality.name;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.postalCode;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.addressRegion.name;
-                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.;
-                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.name;
-
+                    PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress);
 
                     yield return domesticUltimateClue;
                 }
@@ -416,14 +402,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
                     domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
 
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressCountry.name;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressCounty.name;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressLocality.name;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.postalCode;
-                    domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress.addressRegion.name;
-                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.;
-                    //domesticUltimateClue.Data.EntityData.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress.streetNumber.name;
-
+                    PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress);
 
                     yield return domesticUltimateClue;
                 }
@@ -464,6 +443,19 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             // TODO: If necessary, you can create multiple clues and return them.
 
             yield return clue;
+        }
+
+        private void PopulatePrimaryAddress(IEntityMetadata metadata, Models.PrimaryAddress primaryAddress)
+        {
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry]               = primaryAddress.addressCountry?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.ISO2CountryCode]                     = primaryAddress.addressCountry?.isoAlpha2Code;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName]            = primaryAddress.addressCounty?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality]              = primaryAddress.addressLocality?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode]            = primaryAddress.postalCode;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName]            = primaryAddress.addressRegion?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionAbbreviatedName] = primaryAddress.addressRegion?.abbreviatedName;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1]           = primaryAddress.streetAddress?.line1;
+            //metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2]         = primaryAddress.streetAddress?.line2;
         }
 
         public IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
