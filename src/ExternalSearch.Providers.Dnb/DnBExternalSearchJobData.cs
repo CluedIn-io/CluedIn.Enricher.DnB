@@ -20,6 +20,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             VersionId = GetValue<string>(configuration, DnBConstants.KeyName.VersionId);
             ProductId = GetValue<string>(configuration, DnBConstants.KeyName.ProductId);
             BlockIds = GetValue<string>(configuration, DnBConstants.KeyName.BlockIds);
+            SkipDunsEntityCodeCreation = GetValue<bool>(configuration, DnBConstants.KeyName.SkipDunsEntityCodeCreation);
         }
 
         public IDictionary<string, object> ToDictionary()
@@ -39,7 +40,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 { DnBConstants.KeyName.VersionId, VersionId },
                 { DnBConstants.KeyName.ProductId, ProductId },
                 { DnBConstants.KeyName.BlockIds, BlockIds },
-
+                { DnBConstants.KeyName.SkipDunsEntityCodeCreation, SkipDunsEntityCodeCreation },
             };
         }
 
@@ -56,6 +57,6 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public string VersionId { get; set; }
         public string ProductId { get; set; }
         public string BlockIds { get; set; }
-
+        public bool SkipDunsEntityCodeCreation { get; set; }
     }
 }
