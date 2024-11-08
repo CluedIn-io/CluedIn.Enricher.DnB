@@ -215,11 +215,11 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         /// <summary>Creates the metadata.</summary>
         /// <param name="resultItem">The result item.</param>
         /// <returns>The metadata.</returns>
-        private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
+        private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, IDictionary<string, object> config)
         {
             var metadata = new EntityMetadataPart();
 
-            this.PopulateMetadata(metadata, resultItem, request);
+            this.PopulateMetadata(metadata, resultItem, request, config);
 
             return metadata;
         }
@@ -242,19 +242,21 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         /// <summary>Populates the metadata.</summary>
         /// <param name="metadata">The metadata.</param>
         /// <param name="resultItem">The result item.</param>
-        private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
+        private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, IDictionary<string, object> config)
         {
             //var firstMatch = resultItem.Data.matchCandidates[0];
-
-            var code = this.GetOriginEntityCode(resultItem, request);
+            var jobData = new DnBExternalSearchJobData(config);
             //metadata.OutgoingEdges.Add();
             metadata.EntityType = request.EntityMetaData.EntityType;
             //TODO: add Name
             metadata.Name = request.EntityMetaData.Name;
-            metadata.OriginEntityCode = code;
+            metadata.OriginEntityCode = request.EntityMetaData.OriginEntityCode;
 
-            metadata.Codes.Add(code);
-            metadata.Codes.Add(request.EntityMetaData.OriginEntityCode);
+            var code = GetOriginEntityCode(resultItem, request);
+            if (!jobData.SkipDunsEntityCodeCreation)
+            {
+                metadata.Codes.Add(code);
+            }
 
             var domesticUltimateDuns = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.duns;
             var globalUltimateDuns = resultItem.Data.organization?.corporateLinkage?.globalUltimate?.duns;
@@ -269,9 +271,6 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 var domesticCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", domesticUltimateDuns);
                 metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(domesticCode), "/DomesticUltimateParent"));
             }
-
-            metadata.Codes.Add(code);
-            metadata.Codes.Add(request.EntityMetaData.OriginEntityCode);
 
             if (resultItem.Data.organization.dunsControlStatus != null)
             {
@@ -359,11 +358,9 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         {
             var resultItem = result.As<DNBResponse>();
 
-            var code = this.GetOriginEntityCode(resultItem, request);
+            var clue = new Clue(request.EntityMetaData.OriginEntityCode, context.Organization);
 
-            var clue = new Clue(code, context.Organization);
-
-            this.PopulateMetadata(clue.Data.EntityData, resultItem, request);
+            this.PopulateMetadata(clue.Data.EntityData, resultItem, request, config);
 
             //Create all Companies from Ultimate and Global Parents
             if (resultItem.Data.organization.corporateLinkage.domesticUltimate != null)
@@ -461,7 +458,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
         {
             var resultItem = result.As<DNBResponse>();
-            return this.CreateMetadata(resultItem, request);
+            return this.CreateMetadata(resultItem, request, config);
         }
 
         public IPreviewImage GetPrimaryEntityPreviewImage(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)

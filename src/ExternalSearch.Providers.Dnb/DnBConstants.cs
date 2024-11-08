@@ -27,76 +27,77 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             public const string VersionId = "versionId";
             public const string ProductId = "productId";
             public const string BlockIds = "blockIDs";
+            public const string SkipDunsEntityCodeCreation = "skipDunsEntityCodeCreation";
         }
 
         public static AuthMethods AuthMethods { get; set; } = new AuthMethods
         {
             token = new List<Control>()
             {
-                new Control()
+                new()
                 {
                     displayName = "Auth Url",
                     type = "input",
                     isRequired = true,
                     name = KeyName.AuthUrl //https://plus.dnb.com/v2/token
                 },
-                new Control()
+                new()
                 {
                     displayName = "API Key",
                     type = "password",
                     isRequired = true,
                     name = KeyName.AuthKey
                 },
-                new Control()
+                new()
                 {
                     displayName = "API Secret",
                     type = "password",
                     isRequired = true,
                     name = KeyName.AuthSecret
                 },
-                new Control()
+                new()
                 {
                     displayName = "Auth Request Body",
                     type = "input",
                     isRequired = true,
                     name = KeyName.AuthRequestBody //{"grant_type" : "client_credentials"}
                 },
-                new Control()
+                new()
                 {
                     displayName = "DnB Base Url",
                     type = "input",
                     isRequired = true,
                     name = KeyName.DnBBaseUrl
                 },
-                new Control()
+                new()
                 {
                     displayName = "Accepted Entity Type",
                     type = "input",
                     isRequired = false,
                     name = KeyName.AcceptedEntityType
                 },
-                new Control()
+                new()
                 {
                     displayName = "Organization Name vocab key",
                     type = "input",
                     isRequired = false,
                     name = KeyName.OrgNameKey
                 },
-                new Control()
+                new()
                 {
                     displayName = "DUNS vocab key",
                     type = "input",
                     isRequired = false,
                     name = KeyName.DunsNumberKey
                 },
-                new Control()
+                new()
                 {
                     displayName = "Organization Address vocab key",
                     type = "input",
                     isRequired = false,
                     name = KeyName.OrgAddressKey
                 },
-                new Control()
+                new()
                 {
                     displayName = "Organization Country Code vocab key",
                     type = "input",
@@ -104,27 +105,34 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                     name = KeyName.OrgCountryCodeKey
                 },
                 // Match and Append 
-                new Control()
+                new()
                 {
                     displayName = $"Match and Append {KeyName.VersionId}",
                     type = "input",
                     isRequired = false,
                     name = KeyName.VersionId
                 },
-                new Control()
+                new()
                 {
                     displayName = $"Match and Append {KeyName.ProductId}",
                     type = "input",
                     isRequired = false,
                     name = KeyName.ProductId
                 },
-                new Control()
+                new()
                 {
                     displayName = $"Match and Append {KeyName.BlockIds}",
                     type = "input",
                     isRequired = false,
                     name = KeyName.BlockIds
                 },
+                new()
+                {
+                    displayName = "Skip Entity Code Creation (Duns)",
+                    type = "checkbox",
+                    isRequired = false,
+                    name =  KeyName.SkipDunsEntityCodeCreation,
+                }
             }
         };
     }
