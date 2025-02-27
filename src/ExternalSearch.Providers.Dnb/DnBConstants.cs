@@ -71,7 +71,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 },
                 new()
                 {
-                    displayName = "Accepted Entity Type",
+                    displayName = "Accepted Business Domain",
                     type = "input",
                     isRequired = false,
                     name = KeyName.AcceptedEntityType
