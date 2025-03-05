@@ -128,7 +128,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 },
                 new()
                 {
-                    displayName = "Skip Entity Code Creation (Duns)",
+                    displayName = "Skip Identifier Creation (Duns)",
                     type = "checkbox",
                     isRequired = false,
                     name =  KeyName.SkipDunsEntityCodeCreation,
