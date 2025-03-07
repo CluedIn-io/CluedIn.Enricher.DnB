@@ -30,6 +30,11 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             public const string SkipDunsEntityCodeCreation = "skipDunsEntityCodeCreation";
         }
 
+        private static Version _cluedInVersion;
+        public static Version CluedInVersion => _cluedInVersion ??= typeof(Core.Constants).Assembly.GetName().Version;
+        public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";
+        public static string EntityCodeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Code" : "Identifier";
+
         public static AuthMethods AuthMethods { get; set; } = new AuthMethods
         {
             token = new List<Control>()
@@ -71,7 +76,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 },
                 new()
                 {
-                    displayName = "Accepted Business Domain",
+                    displayName = $"Accepted {EntityTypeLabel}",
                     type = "input",
                     isRequired = false,
                     name = KeyName.AcceptedEntityType
@@ -128,7 +133,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 },
                 new()
                 {
-                    displayName = "Skip Entity Code Creation (Duns)",
+                    displayName = $"Skip {EntityCodeLabel} Creation (Duns)",
                     type = "checkbox",
                     isRequired = false,
                     name =  KeyName.SkipDunsEntityCodeCreation,
