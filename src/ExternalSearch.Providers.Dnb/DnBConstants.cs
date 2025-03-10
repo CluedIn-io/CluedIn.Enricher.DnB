@@ -33,7 +33,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         private static Version _cluedInVersion;
         public static Version CluedInVersion => _cluedInVersion ??= typeof(Core.Constants).Assembly.GetName().Version;
         public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";
-        public static string EntityCodeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Code" : "Identifier";
+        public static string EntityCodeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Code" : "Entity Identifier";
 
         public static AuthMethods AuthMethods { get; set; } = new AuthMethods
         {
