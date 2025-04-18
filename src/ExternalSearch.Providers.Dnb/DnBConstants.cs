@@ -27,7 +27,6 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             public const string VersionId = "versionId";
             public const string ProductId = "productId";
             public const string BlockIds = "blockIDs";
-            public const string SkipDunsEntityCodeCreation = "skipDunsEntityCodeCreation";
         }
 
         private static Version _cluedInVersion;
@@ -131,13 +130,6 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                     isRequired = false,
                     name = KeyName.BlockIds
                 },
-                new()
-                {
-                    displayName = $"Skip {EntityCodeLabel} Creation (Duns)",
-                    type = "checkbox",
-                    isRequired = false,
-                    name =  KeyName.SkipDunsEntityCodeCreation,
-                }
             }
         };
     }

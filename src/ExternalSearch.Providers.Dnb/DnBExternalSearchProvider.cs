@@ -215,11 +215,11 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         /// <summary>Creates the metadata.</summary>
         /// <param name="resultItem">The result item.</param>
         /// <returns>The metadata.</returns>
-        private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, IDictionary<string, object> config)
+        private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
         {
             var metadata = new EntityMetadataPart();
 
-            this.PopulateMetadata(metadata, resultItem, request, config);
+            this.PopulateMetadata(metadata, resultItem, request);
 
             return metadata;
         }
@@ -242,21 +242,16 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         /// <summary>Populates the metadata.</summary>
         /// <param name="metadata">The metadata.</param>
         /// <param name="resultItem">The result item.</param>
-        private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, IDictionary<string, object> config)
+        private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
         {
+            var code = this.GetOriginEntityCode(resultItem, request);
             //var firstMatch = resultItem.Data.matchCandidates[0];
-            var jobData = new DnBExternalSearchJobData(config);
             //metadata.OutgoingEdges.Add();
             metadata.EntityType = request.EntityMetaData.EntityType;
             //TODO: add Name
             metadata.Name = request.EntityMetaData.Name;
-            metadata.OriginEntityCode = request.EntityMetaData.OriginEntityCode;
-
-            var code = GetOriginEntityCode(resultItem, request);
-            if (!jobData.SkipDunsEntityCodeCreation)
-            {
-                metadata.Codes.Add(code);
-            }
+            metadata.OriginEntityCode = code;
+            metadata.Codes.Add(request.EntityMetaData.OriginEntityCode);
 
             var domesticUltimateDuns = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.duns;
             var globalUltimateDuns = resultItem.Data.organization?.corporateLinkage?.globalUltimate?.duns;
@@ -357,10 +352,10 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public IEnumerable<Clue> BuildClues(ExecutionContext context, IExternalSearchQuery query, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
         {
             var resultItem = result.As<DNBResponse>();
+            var code = this.GetOriginEntityCode(resultItem, request);
+            var clue = new Clue(code, context.Organization);
 
-            var clue = new Clue(request.EntityMetaData.OriginEntityCode, context.Organization);
-
-            this.PopulateMetadata(clue.Data.EntityData, resultItem, request, config);
+            this.PopulateMetadata(clue.Data.EntityData, resultItem, request);
 
             //Create all Companies from Ultimate and Global Parents
             if (resultItem.Data.organization.corporateLinkage.domesticUltimate != null)
@@ -458,7 +453,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
         {
             var resultItem = result.As<DNBResponse>();
-            return this.CreateMetadata(resultItem, request, config);
+            return this.CreateMetadata(resultItem, request);
         }
 
         public IPreviewImage GetPrimaryEntityPreviewImage(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
