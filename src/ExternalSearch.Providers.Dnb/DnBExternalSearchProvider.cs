@@ -130,27 +130,13 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             RestRequest request;
             if (!string.IsNullOrEmpty(dunsNumber))
             {
-                var requestResource = $"data/duns/{dunsNumber}?productId=cmpelk&versionId=v1";
+                var requestResource = $"data/duns/{dunsNumber}";
                 request = new RestRequest(requestResource, Method.GET);
             }
             else if (!string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode))
             {
-                var requestResource = $"match/extendedMatch";
+                const string requestResource = "match/extendedMatch";
                 request = new RestRequest(requestResource, Method.GET);
-                if ((!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId)))
-                {
-                    request.AddQueryParameter("versionId", jobData.VersionId);
-                    request.AddQueryParameter("productId", jobData.ProductId);
-                }
-                else if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
-                {
-                    request.AddQueryParameter("blockIDs", jobData.BlockIds);
-                }
-                else
-                {
-                    throw new Exception("Could not execute external search query - Either productId & versionId or blockIDs must be specified.");
-                }
-
                 request.AddQueryParameter("name", orgName);
                 request.AddQueryParameter("countryISOAlpha2Code", orgCountryCode);
             }
@@ -159,37 +145,50 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 throw new Exception("Could not execute external search query - name and countryISOAlpha2Code must be specified.");
             }
 
-            //TODO: Request
+            if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
+            {
+                request.AddQueryParameter("versionId", jobData.VersionId);
+                request.AddQueryParameter("productId", jobData.ProductId);
+            }
+            else if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
+            {
+                request.AddQueryParameter("blockIDs", jobData.BlockIds);
+            }
+            else
+            {
+                throw new Exception("Could not execute external search query - Either productId & versionId or blockIDs must be specified.");
+            }
+
             request.AddHeader("Authorization", $"Bearer {token}");
 
             var cleanseResponse = client.ExecuteAsync(request).Result;
 
             if (cleanseResponse.StatusCode == HttpStatusCode.OK)
             {
-                var data = JsonUtility.Deserialize<DNBResponse>(cleanseResponse.Content, new JsonSerializer(){ NullValueHandling = NullValueHandling.Ignore });
+                var data = JsonUtility.Deserialize<DNBResponse>(cleanseResponse.Content, new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore });
 
-                if (data != null)
+                if (data == null)
                 {
-                    var organization = data.organization ?? data.embeddedProduct.organization;
-                    if (organization != null)
-                    {
-                        data.organization = organization;
-                        yield return new ExternalSearchQueryResult<DNBResponse>(query, data);
-                    }
+                    throw new ApplicationException("Could not execute external search query - DnB returned empty data");
                 }
-            }
-            else if (cleanseResponse.StatusCode == HttpStatusCode.NoContent || cleanseResponse.StatusCode == HttpStatusCode.NotFound)
-            {
+
+                var organization = data.organization ?? data.embeddedProduct.organization;
+                if (organization == null)
+                {
+                    throw new ApplicationException("Could not execute external search query - DnB returned empty organization");
+                }
+
+                data.organization = organization;
+                yield return new ExternalSearchQueryResult<DNBResponse>(query, data);
                 yield break;
             }
-            else if (cleanseResponse.ErrorException != null)
+
+            if (cleanseResponse.ErrorException != null)
             {
                 throw new AggregateException(cleanseResponse.ErrorException.Message, cleanseResponse.ErrorException);
             }
-            else
-            {
-                throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
-            }
+
+            throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
         }
 
         private static string GetAuthToken(DnBExternalSearchJobData jobData)
@@ -226,10 +225,12 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
         /// <summary>Gets the origin entity code.</summary>
         /// <param name="resultItem">The result item.</param>
+        /// <param name="request">The request.</param>
+        /// <param name="query">The query.</param>
         /// <returns>The origin entity code.</returns>
-        private EntityCode GetOriginEntityCode(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
+        private EntityCode GetOriginEntityCode(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, IExternalSearchQuery query)
         {
-            return new EntityCode(EntityType.Organization, this.GetCodeOrigin(), resultItem.Data.organization.duns);
+            return new EntityCode(request.EntityMetaData.EntityType, this.GetCodeOrigin(), resultItem.Data.organization?.duns ?? $"{query.QueryKey}{request.EntityMetaData.OriginEntityCode}".ToDeterministicGuid().ToString());
         }
 
         /// <summary>Gets the code origin.</summary>
@@ -242,9 +243,10 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         /// <summary>Populates the metadata.</summary>
         /// <param name="metadata">The metadata.</param>
         /// <param name="resultItem">The result item.</param>
+        /// <param name="request"></param>
         private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
         {
-            var code = this.GetOriginEntityCode(resultItem, request);
+            var code = this.GetOriginEntityCode(resultItem, request, request.Queries.FirstOrDefault());
             //var firstMatch = resultItem.Data.matchCandidates[0];
             //metadata.OutgoingEdges.Add();
             metadata.EntityType = request.EntityMetaData.EntityType;
@@ -259,35 +261,36 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             if (!string.IsNullOrWhiteSpace(globalUltimateDuns))
             {
                 var globalCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", globalUltimateDuns);
-                metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(globalCode), "/GlobalUltimateParent"));
+                metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(request.EntityMetaData.OriginEntityCode), new EntityReference(globalCode), "/GlobalUltimateParent"));
             }
+
             if (!string.IsNullOrWhiteSpace(domesticUltimateDuns))
             {
                 var domesticCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", domesticUltimateDuns);
-                metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(domesticCode), "/DomesticUltimateParent"));
+                metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(request.EntityMetaData.OriginEntityCode), new EntityReference(domesticCode), "/DomesticUltimateParent"));
             }
 
-            if (resultItem.Data.organization.dunsControlStatus != null)
+            if (resultItem.Data.organization?.dunsControlStatus != null)
             {
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusFullReportDate] = resultItem.Data.organization.dunsControlStatus.fullReportDate;
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusLastUpdateDate] = resultItem.Data.organization.dunsControlStatus.lastUpdateDate;
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus?.description;
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDnbCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus?.dnbCode.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusFullReportDate] = resultItem.Data.organization.dunsControlStatus?.fullReportDate;
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusLastUpdateDate] = resultItem.Data.organization.dunsControlStatus?.lastUpdateDate;
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus?.operatingStatus?.description;
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusOperatingStatusDnbCode] = resultItem.Data.organization.dunsControlStatus?.operatingStatus?.dnbCode.PrintIfAvailable();
 
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMarketable] = resultItem.Data.organization.dunsControlStatus.isMarketable.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMailUndeliverable] = resultItem.Data.organization.dunsControlStatus.isMailUndeliverable.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsTelephoneDisconnected] = resultItem.Data.organization.dunsControlStatus.isTelephoneDisconnected.PrintIfAvailable();
-                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsDelisted] = resultItem.Data.organization.dunsControlStatus.isDelisted.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMarketable] = resultItem.Data.organization.dunsControlStatus?.isMarketable.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsMailUndeliverable] = resultItem.Data.organization.dunsControlStatus?.isMailUndeliverable.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsTelephoneDisconnected] = resultItem.Data.organization.dunsControlStatus?.isTelephoneDisconnected.PrintIfAvailable();
+                metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusIsDelisted] = resultItem.Data.organization.dunsControlStatus?.isDelisted.PrintIfAvailable();
                 //metadata.Properties[StaticDnBVocabulary.BusinessPartner.DunsControlStatusSubjectHandlingDetails] = resultItem.Data.organization.dunsControlStatus.subjectHandlingDetails.PrintIfAvailable();
-                if (resultItem.Data.organization.dunsControlStatus.operatingStatus != null)
+                if (resultItem.Data.organization?.dunsControlStatus?.operatingStatus != null)
                 {
                     // Operating Status
-                    metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus.dnbCode.PrintIfAvailable();
-                    metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus.description.PrintIfAvailable();
+                    metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusCode] = resultItem.Data.organization.dunsControlStatus.operatingStatus?.dnbCode.PrintIfAvailable();
+                    metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus?.description.PrintIfAvailable();
                 }
             }
             // DUNS Numbers
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.Duns] = resultItem.Data.organization.duns;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.Duns] = resultItem.Data.organization?.duns;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateDuns] = domesticUltimateDuns;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateDuns] = globalUltimateDuns;
 
@@ -295,24 +298,23 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             //resultItem.Data.organization.telephone
 
             // Business Information
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryBusinessName] = resultItem.Data.organization.primaryName;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryBusinessName] = resultItem.Data.organization?.primaryName;
 
-            if (resultItem.Data.organization.primaryAddress != null)
-            {
-                PopulatePrimaryAddress(metadata, resultItem.Data.organization.primaryAddress);
-            }
+            PopulatePrimaryAddress(metadata, resultItem.Data.organization?.primaryAddress);
 
             //metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = resultItem.Data.organization.websiteAddress.First()..PrintIfAvailable();
 
-            if (resultItem.Data.organization.industryCodes != null)
+            if (resultItem.Data.organization?.industryCodes != null)
+            {
                 foreach (var industryCode in resultItem.Data.organization.industryCodes)
                 {
                     var industryEntityCode = new EntityCode("/IndustrySIC", "DnB", industryCode.code);
-                    metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(code), new EntityReference(industryEntityCode), "/IndustrySic"));
+                    metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(request.EntityMetaData.OriginEntityCode), new EntityReference(industryEntityCode), "/IndustrySic"));
                 }
+            }
 
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDnbCode] = resultItem.Data.organization.businessEntityType?.dnbCode.PrintIfAvailable();
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization.businessEntityType?.description;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDnbCode] = resultItem.Data.organization?.businessEntityType?.dnbCode.PrintIfAvailable();
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization?.businessEntityType?.description;
         }
 
         public IEnumerable<EntityType> Accepts(IDictionary<string, object> config, IProvider provider) => Accepts(config);
@@ -352,60 +354,55 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public IEnumerable<Clue> BuildClues(ExecutionContext context, IExternalSearchQuery query, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
         {
             var resultItem = result.As<DNBResponse>();
-            var code = this.GetOriginEntityCode(resultItem, request);
+            var code = this.GetOriginEntityCode(resultItem, request, query);
             var clue = new Clue(code, context.Organization);
 
             this.PopulateMetadata(clue.Data.EntityData, resultItem, request);
 
             //Create all Companies from Ultimate and Global Parents
-            if (resultItem.Data.organization.corporateLinkage.domesticUltimate != null)
+            if (resultItem.Data.organization.corporateLinkage?.domesticUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(resultItem.Data.organization.corporateLinkage.domesticUltimate?.duns))
             {
-                if (resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress != null)
-                {
-                    var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.domesticUltimate.duns);
-                    var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
+                var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.domesticUltimate.duns);
+                var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
 
-                    //metadata.OutgoingEdges.Add();
-                    domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
-                    //TODO: add Name
-                    domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryName;
-                    domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
+                //metadata.OutgoingEdges.Add();
+                domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
+                //TODO: add Name
 
-                    domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
+                domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryName;
+                domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
 
-                    PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress);
+                domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
 
-                    yield return domesticUltimateClue;
-                }
+                PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress);
+
+                yield return domesticUltimateClue;
             }
 
-            if (resultItem.Data.organization.corporateLinkage.globalUltimate != null)
+            if (resultItem.Data.organization.corporateLinkage?.globalUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(resultItem.Data.organization.corporateLinkage.globalUltimate?.duns))
             {
-                if (resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress != null)
-                {
-                    var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.globalUltimate.duns);
-                    var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
+                var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.globalUltimate.duns);
+                var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
 
-                    //metadata.OutgoingEdges.Add();
-                    domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
-                    //TODO: add Name
-                    domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryName;
-                    domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
+                //metadata.OutgoingEdges.Add();
+                domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
+                //TODO: add Name
+                domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryName;
+                domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
 
-                    domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
+                domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
 
-                    PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress);
+                PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress);
 
-                    yield return domesticUltimateClue;
-                }
+                yield return domesticUltimateClue;
             }
-
-
 
             //Create all Industry Codes
-            if (resultItem.Data.organization.industryCodes != null)
+            if (resultItem.Data.organization?.industryCodes != null)
+            {
                 foreach (var industryCode in resultItem.Data.organization.industryCodes)
                 {
+                    if (industryCode == null) continue;
                     var industryEntityCode = new EntityCode("/IndustrySIC", "DnB", industryCode.code);
                     var industryClue = new Clue(industryEntityCode, context.Organization);
 
@@ -426,7 +423,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
                     yield return industryClue;
                 }
-
+            }
 
             //Create all Senior Principals
 
@@ -439,14 +436,16 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
         private void PopulatePrimaryAddress(IEntityMetadata metadata, Models.PrimaryAddress primaryAddress)
         {
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry]               = primaryAddress.addressCountry?.name;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.ISO2CountryCode]                     = primaryAddress.addressCountry?.isoAlpha2Code;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName]            = primaryAddress.addressCounty?.name;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality]              = primaryAddress.addressLocality?.name;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode]            = primaryAddress.postalCode;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName]            = primaryAddress.addressRegion?.name;
+            if (primaryAddress == null) return;
+
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = primaryAddress.addressCountry?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.ISO2CountryCode] = primaryAddress.addressCountry?.isoAlpha2Code;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = primaryAddress.addressCounty?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressLocality] = primaryAddress.addressLocality?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressPostalCode] = primaryAddress.postalCode;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = primaryAddress.addressRegion?.name;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionAbbreviatedName] = primaryAddress.addressRegion?.abbreviatedName;
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1]           = primaryAddress.streetAddress?.line1;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = primaryAddress.streetAddress?.line1;
             //metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2]         = primaryAddress.streetAddress?.line2;
         }
 
@@ -522,7 +521,6 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 
                     return ConstructFailedConnectionResponse(cleanseExtendedMatchResponse, data);
                 }
-
             } 
             catch (Exception ex) 
             {

@@ -123,7 +123,7 @@ namespace CluedIn.Provider.DnB
         public bool SupportsEnricherV2 => true;
         public Dictionary<string, object> ExtraInfo { get; } = new()
         {
-            { "autoMap", false },
+            { "autoMap", true },
             { "useEnricherOriginEntityCode", true },
             { "supportConfidenceScore", false }, // for UI
             { "minConfidenceScore", 0 }, // for UI
