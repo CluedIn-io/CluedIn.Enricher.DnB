@@ -29,6 +29,12 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             public const string BlockIds = "blockIDs";
         }
 
+        public struct ErrorMessages
+        {
+            public const string TooManyRequests = "Too many requests";
+            public const string AccessTokenExpired = "Access Token Expired";
+        }
+
         private static Version _cluedInVersion;
         public static Version CluedInVersion => _cluedInVersion ??= typeof(Core.Constants).Assembly.GetName().Version;
         public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";

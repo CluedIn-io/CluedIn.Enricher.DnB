@@ -1,4 +1,5 @@
 ﻿using CluedIn.Core;
+using CluedIn.Core.Connectors;
 using CluedIn.Core.Data;
 using CluedIn.Core.Data.Parts;
 using CluedIn.Core.Data.Relational;
@@ -11,9 +12,11 @@ using CluedIn.ExternalSearch.Providers.DnB.Model;
 using CluedIn.ExternalSearch.Providers.DnB.Models;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Configuration.Provider;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -23,7 +26,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
 {
     /// <summary>The dnb graph external search provider.</summary>
     /// <seealso cref="CluedIn.ExternalSearch.ExternalSearchProviderBase" />
-    public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEnricherMetadata, IConfigurableExternalSearchProvider
+    public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEnricherMetadata, IConfigurableExternalSearchProvider, IExternalSearchProviderWithVerifyConnection
     {
         public static readonly Guid ProviderId = Guid.Parse("31d78803-3a06-45a7-9ef2-4179b8242fbf");
 
@@ -459,6 +462,112 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public IPreviewImage GetPrimaryEntityPreviewImage(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
         {
             return null;
+        }
+
+        public ConnectionVerificationResult VerifyConnection(ExecutionContext context, IReadOnlyDictionary<string, object> config)
+        {
+            var configDict = new Dictionary<string, object>(config);
+            var jobData = new DnBExternalSearchJobData(configDict);
+
+            try
+            {
+                const string dummyDunsNumber = "515042588"; // Pfizer Duns number
+                const string dummyOrgName = "Pfizer";
+                const string dummyOrgCountryCode = "US";
+                var token = GetAuthToken(jobData);
+
+                var client = new RestClient(jobData.DnBBaseUrl);
+
+                const string dunsRequestResource = $"data/duns/{dummyDunsNumber}";
+                var dunsRequest = new RestRequest(dunsRequestResource, Method.GET);
+                dunsRequest.AddHeader("Authorization", $"Bearer {token}");
+
+                if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
+                {
+                    dunsRequest.AddQueryParameter("blockIDs", jobData.BlockIds);
+                }
+
+                var cleanseDunsResponse = client.ExecuteAsync(dunsRequest).Result;
+
+                if (cleanseDunsResponse.StatusCode != HttpStatusCode.OK)
+                {
+                    var data = JsonUtility.Deserialize<DNBResponse>(cleanseDunsResponse.Content, new JsonSerializer { NullValueHandling = NullValueHandling.Ignore });
+
+                    return ConstructVerifyConnectionResponse(cleanseDunsResponse, data);
+                }
+
+                const string requestResource = "match/extendedMatch";
+                var extendedMatchRequest = new RestRequest(requestResource, Method.GET);
+                if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
+                {
+                    extendedMatchRequest.AddQueryParameter("versionId", jobData.VersionId);
+                    extendedMatchRequest.AddQueryParameter("productId", jobData.ProductId);
+                }
+                else if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
+                {
+                    extendedMatchRequest.AddQueryParameter("blockIDs", jobData.BlockIds);
+                }
+                else
+                {
+                    return new ConnectionVerificationResult(false,
+                        "Could not execute external search query - Either productId & versionId or blockIDs must be specified.");
+                }
+
+                extendedMatchRequest.AddQueryParameter("name", dummyOrgName);
+                extendedMatchRequest.AddQueryParameter("countryISOAlpha2Code", dummyOrgCountryCode);
+                extendedMatchRequest.AddHeader("Authorization", $"Bearer {token}");
+
+                var cleanseExtendedMatchResponse = client.ExecuteAsync(extendedMatchRequest).Result;
+
+                if (cleanseExtendedMatchResponse.StatusCode != HttpStatusCode.OK)
+                {
+                    var data = JsonUtility.Deserialize<DNBResponse>(cleanseExtendedMatchResponse.Content, new JsonSerializer { NullValueHandling = NullValueHandling.Ignore });
+
+                    return ConstructVerifyConnectionResponse(cleanseDunsResponse, data);
+                }
+
+            } catch (Exception ex)
+            {
+                if (ex.Message.Contains(DnBConstants.ErrorMessages.TooManyRequests))
+                {
+                    return new ConnectionVerificationResult(false, $"{DnBConstants.ProviderName} returned {HttpStatusCode.TooManyRequests} {ex.Message}.");
+                }
+
+                return ex.Message.Contains(DnBConstants.ErrorMessages.AccessTokenExpired) ? new ConnectionVerificationResult(false, $"{DnBConstants.ProviderName} returned {HttpStatusCode.Unauthorized} {ex.Message}.") : new ConnectionVerificationResult(false, ex.Message);
+            }
+
+            return new ConnectionVerificationResult(true);
+        }
+
+        private static ConnectionVerificationResult ConstructVerifyConnectionResponse(IRestResponse response, DNBResponse data)
+        {
+            var errorMessageBase = $"{DnBConstants.ProviderName} returned \"{(int)response.StatusCode} {response.StatusDescription}\".";
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                return new ConnectionVerificationResult(
+                    false,
+                    $"{errorMessageBase} This could be due to an invalid API key or API Secret."
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(data?.error?.errorCode) && !string.IsNullOrWhiteSpace(data?.error?.errorMessage))
+            {
+                return new ConnectionVerificationResult(
+                    false,
+                    $"{errorMessageBase} {data.error.errorCode} {data.error.errorMessage}"
+                );
+            }
+
+            if (response.ErrorException != null)
+            {
+                return new ConnectionVerificationResult(
+                    false,
+                    $"{errorMessageBase} {(!string.IsNullOrWhiteSpace(response.ErrorException.Message) ? response.ErrorException.Message : "This could be due to breaking changes in the external system")}."
+                );
+            }
+
+            return new ConnectionVerificationResult(false, "This could be due to breaking changes in the external system");
         }
     }
 }
