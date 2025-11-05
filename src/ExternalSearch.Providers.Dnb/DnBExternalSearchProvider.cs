@@ -490,7 +490,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 {
                     var data = JsonUtility.Deserialize<DNBResponse>(cleanseDunsResponse.Content, new JsonSerializer { NullValueHandling = NullValueHandling.Ignore });
 
-                    return ConstructVerifyConnectionResponse(cleanseDunsResponse, data);
+                    return ConstructFailedConnectionResponse(cleanseDunsResponse, data);
                 }
 
                 const string requestResource = "match/extendedMatch";
@@ -520,7 +520,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 {
                     var data = JsonUtility.Deserialize<DNBResponse>(cleanseExtendedMatchResponse.Content, new JsonSerializer { NullValueHandling = NullValueHandling.Ignore });
 
-                    return ConstructVerifyConnectionResponse(cleanseExtendedMatchResponse, data);
+                    return ConstructFailedConnectionResponse(cleanseExtendedMatchResponse, data);
                 }
 
             } 
@@ -537,7 +537,7 @@ namespace CluedIn.ExternalSearch.Providers.DnB
             return new ConnectionVerificationResult(true);
         }
 
-        private static ConnectionVerificationResult ConstructVerifyConnectionResponse(IRestResponse response, DNBResponse data)
+        private static ConnectionVerificationResult ConstructFailedConnectionResponse(IRestResponse response, DNBResponse data)
         {
             var errorMessageBase = $"{DnBConstants.ProviderName} returned \"{(int)response.StatusCode} {response.StatusDescription}\".";
 
