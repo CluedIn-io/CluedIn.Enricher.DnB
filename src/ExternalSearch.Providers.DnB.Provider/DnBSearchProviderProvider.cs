@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CluedIn.Core;
+﻿using CluedIn.Core;
 using CluedIn.Core.Crawling;
 using CluedIn.Core.Data.Relational;
 using CluedIn.Core.ExternalSearch;
@@ -10,7 +6,12 @@ using CluedIn.Core.Providers;
 using CluedIn.Core.Webhooks;
 using CluedIn.ExternalSearch;
 using CluedIn.ExternalSearch.Providers.DnB;
+using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
 using CluedIn.Providers.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Constants = CluedIn.ExternalSearch.Providers.DnB.DnBConstants;
 
 namespace CluedIn.Provider.DnB
@@ -119,5 +120,20 @@ namespace CluedIn.Provider.DnB
         public IEnumerable<Control> Properties { get; } = new List<Control>();
         public Guide Guide { get; } = null;
         public new IntegrationType Type { get; } = IntegrationType.Enrichment;
+        public bool SupportsEnricherV2 => true;
+        public Dictionary<string, object> ExtraInfo { get; } = new()
+        {
+            { "autoMap", false },
+            { "useEnricherOriginEntityCode", true },
+            { "supportConfidenceScore", false }, // for UI
+            { "minConfidenceScore", 0 }, // for UI
+            { "maxConfidenceScore", 100 }, // for UI
+            { "origin", Constants.ProviderName.ToCamelCase() },
+            { "originField", string.Empty },
+            { "nameKeyField", Constants.KeyName.OrgNameKey },
+            { "vocabKeyPrefix", StaticDnBVocabulary.BusinessPartner.KeyPrefix },
+            { "autoSubmission", false },
+            { "dataSourceSetId", string.Empty },
+        };
     }
 }
