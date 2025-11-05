@@ -12,7 +12,6 @@ using CluedIn.ExternalSearch.Providers.DnB.Model;
 using CluedIn.ExternalSearch.Providers.DnB.Models;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -523,10 +522,11 @@ namespace CluedIn.ExternalSearch.Providers.DnB
                 {
                     var data = JsonUtility.Deserialize<DNBResponse>(cleanseExtendedMatchResponse.Content, new JsonSerializer { NullValueHandling = NullValueHandling.Ignore });
 
-                    return ConstructVerifyConnectionResponse(cleanseDunsResponse, data);
+                    return ConstructVerifyConnectionResponse(cleanseExtendedMatchResponse, data);
                 }
 
-            } catch (Exception ex)
+            } 
+            catch (Exception ex) 
             {
                 if (ex.Message.Contains(DnBConstants.ErrorMessages.TooManyRequests))
                 {
