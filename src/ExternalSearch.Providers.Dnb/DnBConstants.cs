@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using CluedIn.Core.Data.Relational;
+using System.Linq;
 using CluedIn.Core.Providers;
 
 namespace CluedIn.ExternalSearch.Providers.DnB
@@ -34,103 +34,116 @@ namespace CluedIn.ExternalSearch.Providers.DnB
         public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";
         public static string EntityCodeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Code" : "Entity Identifier";
 
-        public static AuthMethods AuthMethods { get; set; } = new AuthMethods
+
+        public static IEnumerable<Control> Properties { get; set; } = new List<Control>
         {
-            token = new List<Control>()
+            new()
+            {
+                DisplayName = "Organization Name Vocabulary Key",
+                Type = "vocabularyKeySelector",
+                IsRequired = false,
+                Name = KeyName.OrgNameKey
+            },
+            new()
+            {
+                DisplayName = "DUNS Vocabulary Key",
+                Type = "vocabularyKeySelector",
+                IsRequired = false,
+                Name = KeyName.DunsNumberKey
+            },
+            new()
+            {
+                DisplayName = "Organization Address Vocabulary Key",
+                Type = "vocabularyKeySelector",
+                IsRequired = false,
+                Name = KeyName.OrgAddressKey
+            },
+            new()
+            {
+                DisplayName = "Organization Country Code Vocabulary Key",
+                Type = "vocabularyKeySelector",
+                IsRequired = false,
+                Name = KeyName.OrgCountryCodeKey
+            },
+            // Match and Append 
+            new()
+            {
+                DisplayName = $"Match and Append {KeyName.VersionId}",
+                Type = "input",
+                IsRequired = false,
+                Name = KeyName.VersionId
+            },
+            new()
+            {
+                DisplayName = $"Match and Append {KeyName.ProductId}",
+                Type = "input",
+                IsRequired = false,
+                Name = KeyName.ProductId
+            },
+            new()
+            {
+                DisplayName = $"Match and Append {KeyName.BlockIds}",
+                Type = "input",
+                IsRequired = false,
+                Name = KeyName.BlockIds
+            }
+        };
+
+        public static AuthMethods AuthMethods { get; set; } = new()
+        {
+            Token = new List<Control>
             {
                 new()
                 {
-                    displayName = "Auth Url",
-                    type = "input",
-                    isRequired = true,
-                    name = KeyName.AuthUrl //https://plus.dnb.com/v2/token
+                    DisplayName = "Auth Url",
+                    Type = "input",
+                    IsRequired = true,
+                    Name = KeyName.AuthUrl,
+                    Options = new Dictionary<string, object>
+                    {
+                        { "defaultValue", "https://plus.dnb.com/v2/token" }
+                    }
                 },
                 new()
                 {
-                    displayName = "API Key",
-                    type = "password",
-                    isRequired = true,
-                    name = KeyName.AuthKey
+                    DisplayName = "API Key",
+                    Type = "password",
+                    IsRequired = true,
+                    Name = KeyName.AuthKey
                 },
                 new()
                 {
-                    displayName = "API Secret",
-                    type = "password",
-                    isRequired = true,
-                    name = KeyName.AuthSecret
+                    DisplayName = "API Secret",
+                    Type = "password",
+                    IsRequired = true,
+                    Name = KeyName.AuthSecret
                 },
                 new()
                 {
-                    displayName = "Auth Request Body",
-                    type = "input",
-                    isRequired = true,
-                    name = KeyName.AuthRequestBody //{"grant_type" : "client_credentials"}
+                    DisplayName = "Auth Request Body",
+                    Type = "input",
+                    IsRequired = true,
+                    Name = KeyName.AuthRequestBody,
+                    Options = new Dictionary<string, object>
+                    {
+                        { "defaultValue", "{\"grant_type\" : \"client_credentials\"}" }
+                    }
                 },
                 new()
                 {
-                    displayName = "DnB Base Url",
-                    type = "input",
-                    isRequired = true,
-                    name = KeyName.DnBBaseUrl
+                    DisplayName = "DnB Base Url",
+                    Type = "input",
+                    IsRequired = true,
+                    Name = KeyName.DnBBaseUrl
                 },
                 new()
                 {
-                    displayName = $"Accepted {EntityTypeLabel}",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.AcceptedEntityType
-                },
-                new()
-                {
-                    displayName = "Organization Name vocab key",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.OrgNameKey
-                },
-                new()
-                {
-                    displayName = "DUNS vocab key",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.DunsNumberKey
-                },
-                new()
-                {
-                    displayName = "Organization Address vocab key",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.OrgAddressKey
-                },
-                new()
-                {
-                    displayName = "Organization Country Code vocab key",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.OrgCountryCodeKey
-                },
-                // Match and Append 
-                new()
-                {
-                    displayName = $"Match and Append {KeyName.VersionId}",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.VersionId
-                },
-                new()
-                {
-                    displayName = $"Match and Append {KeyName.ProductId}",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.ProductId
-                },
-                new()
-                {
-                    displayName = $"Match and Append {KeyName.BlockIds}",
-                    type = "input",
-                    isRequired = false,
-                    name = KeyName.BlockIds
-                },
-            }
+                    DisplayName = $"Accepted {EntityTypeLabel}",
+                    Type = "entityTypeSelector",
+                    IsRequired = false,
+                    Name = KeyName.AcceptedEntityType
+                }
+            }.Concat(Properties)
         };
     }
 }
