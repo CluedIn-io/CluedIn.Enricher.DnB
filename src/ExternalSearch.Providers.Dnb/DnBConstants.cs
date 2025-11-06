@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CluedIn.Core.Data.Relational;
 using CluedIn.Core.Providers;
 
 namespace CluedIn.ExternalSearch.Providers.DnB;
@@ -9,6 +10,39 @@ public static class DnBConstants
 {
     public const string ComponentName = "DnB";
     public const string ProviderName = "DnB";
+    public const string Instruction = """
+                                      [
+                                        {
+                                          "type": "bulleted-list",
+                                          "children": [
+                                            {
+                                              "type": "list-item",
+                                              "children": [
+                                                {
+                                                  "text": "Add the entity type to specify the golden records you want to enrich. Only golden records belonging to that entity type will be enriched."
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "list-item",
+                                              "children": [
+                                                {
+                                                  "text": "Add the vocabulary keys to provide the input for the enricher to search for additional information. For example, if you provide the website vocabulary key for the Web enricher, it will use specific websites to look for information about companies. In some cases, vocabulary keys are not required. If you don't add them, the enricher will use default vocabulary keys."
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "list-item",
+                                              "children": [
+                                                {
+                                                  "text": "Add the API key and API Secret to enable the enricher to retrieve information from a specific API. For example, the DnB enricher requires an access key to authenticate with the DnB API."
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                      """;
 
     public struct KeyName
     {
@@ -35,6 +69,7 @@ public static class DnBConstants
         public const string AccessTokenExpired = "Access Token Expired";
     }
 
+    public static Guide Guide { get; set; } = new() { Instructions = Instruction };
     private static Version _cluedInVersion;
     public static Version CluedInVersion => _cluedInVersion ??= typeof(Core.Constants).Assembly.GetName().Version;
     public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";
