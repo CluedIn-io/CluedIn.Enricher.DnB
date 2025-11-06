@@ -118,7 +118,7 @@ public class DnBSearchProviderProvider : ProviderBase, IExtendedProviderMetadata
     public string About => "Dun & Bradstreet is global provider of business decisioning data and analytics.";
     public AuthMethods AuthMethods { get; } = Constants.AuthMethods;
     public IEnumerable<Control> Properties { get; } = new List<Control>();
-    public Guide Guide => null;
+    public Guide Guide => Constants.Guide;
     public new IntegrationType Type => IntegrationType.Enrichment;
     public bool SupportsEnricherV2 => true;
     public Dictionary<string, object> ExtraInfo { get; } = new()
