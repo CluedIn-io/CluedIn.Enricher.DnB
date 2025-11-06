@@ -10,7 +10,6 @@ public static class DnBConstants
 {
     public const string ComponentName = "DnB";
     public const string ProviderName = "DnB";
-
     public const string Instruction = """
                                       [
                                         {
@@ -71,7 +70,6 @@ public static class DnBConstants
     }
 
     public static Guide Guide { get; set; } = new() { Instructions = Instruction };
-
     private static Version _cluedInVersion;
     public static Version CluedInVersion => _cluedInVersion ??= typeof(Core.Constants).Assembly.GetName().Version;
     public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";
