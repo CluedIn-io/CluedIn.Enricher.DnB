@@ -352,6 +352,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressRegionName] = domesticUltimatePrimaryAddress.addressRegion?.name;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressRegionAbbreviatedName] = domesticUltimatePrimaryAddress.addressRegion?.abbreviatedName;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressStreetLine1] = domesticUltimatePrimaryAddress.streetAddress?.line1;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressStreetLine2] = domesticUltimatePrimaryAddress.streetAddress?.line2.PrintIfAvailable();
         }
 
         if (resultItem.Data.organization?.corporateLinkage?.globalUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(globalUltimateDuns) && globalUltimateDuns != duns)
@@ -366,6 +367,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressRegionName] = globalUltimatePrimaryAddress.addressRegion?.name;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressRegionAbbreviatedName] = globalUltimatePrimaryAddress.addressRegion?.abbreviatedName;
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressStreetLine1] = globalUltimatePrimaryAddress.streetAddress?.line1;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressStreetLine2] = globalUltimatePrimaryAddress.streetAddress?.line2.PrintIfAvailable();
         }
 
         if (resultItem.Data.organization?.primaryAddress == null) return;
@@ -385,7 +387,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     private static void PopulateIndustryCodes(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
     {
         var industryCodesIndex = 0;
-        foreach (var industryCode in resultItem.Data.organization.industryCodes.Where(_ => resultItem.Data.organization?.industryCodes != null))
+        foreach (var industryCode in resultItem.Data.organization?.industryCodes ?? Enumerable.Empty<IndustryCode>())
         {
             metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.description"] = industryCode.description;
             metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.typeDescription"] = industryCode.typeDescription;
