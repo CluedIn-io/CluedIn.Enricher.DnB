@@ -16,11 +16,15 @@ public class DnBVocabulary : SimpleVocabulary
             Duns = group.Add(new VocabularyKey(nameof(Duns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible).WithDisplayName("D-U-N-S Number"));
             DomesticUltimateDuns = group.Add(new VocabularyKey(nameof(DomesticUltimateDuns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible)).WithDisplayName("Domestic Ultimate D-U-N-S Number");
             GlobalUltimateDuns = group.Add(new VocabularyKey(nameof(GlobalUltimateDuns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible)).WithDisplayName("Global Ultimate D-U-N-S Number");
+            ParentDuns = group.Add(new VocabularyKey(nameof(ParentDuns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible)).WithDisplayName("Parent D-U-N-S Number");
+            HeadQuarterDuns = group.Add(new VocabularyKey(nameof(HeadQuarterDuns), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible)).WithDisplayName("Head Quarter D-U-N-S Number");
             OperatingStatusCode = group.Add(new VocabularyKey(nameof(OperatingStatusCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             OperatingStatusDescription = group.Add(new VocabularyKey(nameof(OperatingStatusDescription), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             ISO2CountryCode = group.Add(new VocabularyKey(nameof(ISO2CountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             GlobalUltimateISO2CountryCode = group.Add(new VocabularyKey(nameof(GlobalUltimateISO2CountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DomesticUltimateISO2CountryCode = group.Add(new VocabularyKey(nameof(DomesticUltimateISO2CountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentISO2CountryCode = group.Add(new VocabularyKey(nameof(ParentISO2CountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterISO2CountryCode = group.Add(new VocabularyKey(nameof(HeadQuarterISO2CountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             PrimaryBusinessName = group.Add(new VocabularyKey(nameof(PrimaryBusinessName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             PrimaryAddressCountry = group.Add(new VocabularyKey(nameof(PrimaryAddressCountry), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             PrimaryAddressCountyName = group.Add(new VocabularyKey(nameof(PrimaryAddressCountyName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
@@ -47,6 +51,22 @@ public class DnBVocabulary : SimpleVocabulary
             DomesticUltimatePrimaryAddressRegionName = group.Add(new VocabularyKey(nameof(DomesticUltimatePrimaryAddressRegionName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DomesticUltimatePrimaryAddressStreetLine1 = group.Add(new VocabularyKey(nameof(DomesticUltimatePrimaryAddressStreetLine1), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DomesticUltimatePrimaryAddressStreetLine2 = group.Add(new VocabularyKey(nameof(DomesticUltimatePrimaryAddressStreetLine2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressCountry = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressCountry), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressCountyName = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressCountyName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressLocality = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressLocality), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressPostalCode = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressPostalCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressRegionAbbreviatedName = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressRegionAbbreviatedName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressRegionName = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressRegionName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressStreetLine1 = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressStreetLine1), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ParentPrimaryAddressStreetLine2 = group.Add(new VocabularyKey(nameof(ParentPrimaryAddressStreetLine2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressCountry = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressCountry), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressCountyName = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressCountyName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressLocality = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressLocality), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressPostalCode = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressPostalCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressRegionAbbreviatedName = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressRegionAbbreviatedName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressRegionName = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressRegionName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressStreetLine1 = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressStreetLine1), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            HeadQuarterPrimaryAddressStreetLine2 = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressStreetLine2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             WebsiteUrl = group.Add(new VocabularyKey(nameof(WebsiteUrl), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             RegistrationNumber2 = group.Add(new VocabularyKey(nameof(RegistrationNumber2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DunsControlStatusFullReportDate = group.Add(new VocabularyKey(nameof(DunsControlStatusFullReportDate), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
@@ -61,14 +81,19 @@ public class DnBVocabulary : SimpleVocabulary
             BusinessEntityTypeDnbCode = group.Add(new VocabularyKey(nameof(BusinessEntityTypeDnbCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             BusinessEntityTypeDescription = group.Add(new VocabularyKey(nameof(BusinessEntityTypeDescription), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             MatchConfidenceCode = group.Add(new VocabularyKey(nameof(MatchConfidenceCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            ConfidenceScore = group.Add(new VocabularyKey("_cluedin_confidenceScore"));
+            HierarchyLevel = group.Add(new VocabularyKey(nameof(HierarchyLevel), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            GlobalUltimateFamilyTreeMembersCount = group.Add(new VocabularyKey(nameof(GlobalUltimateFamilyTreeMembersCount), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
         });
-
     }
+
     public VocabularyKey Duns { get; protected set; }
     public VocabularyKey MatchConfidenceCode { get; protected set; }
     public VocabularyKey PrimaryBusinessName { get; protected set; }
     public VocabularyKey DomesticUltimateDuns { get; protected set; }
     public VocabularyKey GlobalUltimateDuns { get; protected set; }
+    public VocabularyKey ParentDuns { get; protected set; }
+    public VocabularyKey HeadQuarterDuns { get; protected set; }
     public VocabularyKey OperatingStatusCode { get; protected set; }
     public VocabularyKey OperatingStatusDescription { get; protected set; }
     public VocabularyKey ISO2CountryCode { get; protected set; }
@@ -99,6 +124,24 @@ public class DnBVocabulary : SimpleVocabulary
     public VocabularyKey DomesticUltimatePrimaryAddressPostalCode { get; protected set; }
     public VocabularyKey DomesticUltimatePrimaryAddressStreetLine1 { get; protected set; }
     public VocabularyKey DomesticUltimatePrimaryAddressStreetLine2 { get; protected set; }
+    public VocabularyKey ParentISO2CountryCode { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressCountry { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressCountyName { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressLocality { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressRegionAbbreviatedName { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressRegionName { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressPostalCode { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressStreetLine1 { get; protected set; }
+    public VocabularyKey ParentPrimaryAddressStreetLine2 { get; protected set; }
+    public VocabularyKey HeadQuarterISO2CountryCode { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressCountry { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressCountyName { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressLocality { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressRegionAbbreviatedName { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressRegionName { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressPostalCode { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressStreetLine1 { get; protected set; }
+    public VocabularyKey HeadQuarterPrimaryAddressStreetLine2 { get; protected set; }
     public VocabularyKey WebsiteUrl { get; protected set; }
     public VocabularyKey RegistrationNumber2 { get; protected set; }
     public VocabularyKey DunsControlStatusFullReportDate { get; protected set; }
@@ -112,4 +155,7 @@ public class DnBVocabulary : SimpleVocabulary
     public VocabularyKey DunsControlStatusSubjectHandlingDetails { get; protected set; }
     public VocabularyKey BusinessEntityTypeDnbCode { get; protected set; }
     public VocabularyKey BusinessEntityTypeDescription { get; protected set; }
+    public VocabularyKey ConfidenceScore { get; protected set; }
+    public VocabularyKey HierarchyLevel { get; protected set; }
+    public VocabularyKey GlobalUltimateFamilyTreeMembersCount { get; protected set; }
 }

@@ -125,7 +125,7 @@ public class DnBSearchProviderProvider : ProviderBase, IExtendedProviderMetadata
     {
         { "autoMap", true },
         { "useEnricherOriginEntityCode", true },
-        { "supportConfidenceScore", false }, // for UI
+        { "supportConfidenceScore", true }, // for UI
         { "minConfidenceScore", 0 }, // for UI
         { "maxConfidenceScore", 100 }, // for UI
         { "origin", Constants.ProviderName.ToCamelCase() },
