@@ -467,8 +467,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         foreach (var stockExchange in resultItem.Data.organization?.stockExchanges ?? Enumerable.Empty<StockExchange>())
         {
             metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.tickerName"] = stockExchange.tickerName;
-            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.exchangeName.description"] = stockExchange.exchangeName.description;
-            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.exchangeCountry.exchangeCountry"] = stockExchange.exchangeCountry.isoAlpha2Code;
+            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.exchangeName.description"] = stockExchange.exchangeName?.description;
+            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.exchangeCountry.exchangeCountry"] = stockExchange.exchangeCountry?.isoAlpha2Code;
 
             stockExchangesIndex++;
         }
@@ -480,8 +480,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumber"] = registrationNumbers.registrationNumber;
             metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDescription"] = registrationNumbers.typeDescription;
             metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDnBCode"] = registrationNumbers.typeDnBCode.PrintIfAvailable();
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.description"] = registrationNumbers.registrationNumberClass.description;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.dnbCode"] = registrationNumbers.registrationNumberClass.dnbCode.PrintIfAvailable();
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.description"] = registrationNumbers.registrationNumberClass?.description;
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.dnbCode"] = registrationNumbers.registrationNumberClass?.dnbCode.PrintIfAvailable();
 
             registrationNumbersIndex++;
         }
@@ -491,8 +491,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         var familyTreeRolesPlayedIndex = 0;
         foreach (var role in resultItem.Data.organization?.corporateLinkage.familytreeRolesPlayed ?? Enumerable.Empty<FamilytreeRolesPlayed>())
         {
-            metadata.Properties[$"{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{familyTreeRolesPlayedIndex}.description"] = role.description;
-            metadata.Properties[$"{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{familyTreeRolesPlayedIndex}.dnbCode"] = role.dnbCode.PrintIfAvailable();
+            metadata.Properties[$"{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeyPrefix}{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeySeparator}{familyTreeRolesPlayedIndex}.description"] = role.description;
+            metadata.Properties[$"{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeyPrefix}{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeySeparator}{familyTreeRolesPlayedIndex}.dnbCode"] = role.dnbCode.PrintIfAvailable();
 
             familyTreeRolesPlayedIndex++;
         }
@@ -520,7 +520,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     private static void PopulateConfidenceScore(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
     {
-        var matchCandidateConfidenceCode = resultItem.Data.matchCandidates.FirstOrDefault()?.matchQualityInformation.confidenceCode;
+        var matchCandidateConfidenceCode = resultItem.Data.matchCandidates.FirstOrDefault()?.matchQualityInformation?.confidenceCode;
         var confidenceScore = 100;
 
         // Match candidate confidence code ranges from 1 (low) to 10 (high).

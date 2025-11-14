@@ -155,7 +155,7 @@ public class DnBVocabulary : SimpleVocabulary
     public VocabularyKey DunsControlStatusSubjectHandlingDetails { get; protected set; }
     public VocabularyKey BusinessEntityTypeDnbCode { get; protected set; }
     public VocabularyKey BusinessEntityTypeDescription { get; protected set; }
-    public VocabularyKey ConfidenceScore { get; set; }
-    public VocabularyKey HierarchyLevel { get; set; }
+    public VocabularyKey ConfidenceScore { get; protected set; }
+    public VocabularyKey HierarchyLevel { get; protected set; }
     public VocabularyKey GlobalUltimateFamilyTreeMembersCount { get; protected set; }
 }
