@@ -125,6 +125,9 @@ public class GlobalUltimate
 
 public class HeadQuarter
 {
+    public string duns { get; set; }
+    public string primaryName { get; set; }
+    public PrimaryAddress primaryAddress { get; set; }
 }
 
 public class IndustryCode
@@ -202,16 +205,16 @@ public class Organization
     public string duns { get; set; }
     public DunsControlStatus dunsControlStatus { get; set; }
     public string primaryName { get; set; }
-    public List<object> tradeStyleNames { get; set; }
-    public List<object> websiteAddress { get; set; }
+    public List<TradeStyleName> tradeStyleNames { get; set; }
+    public List<WebsiteAddress> websiteAddress { get; set; }
     public List<Telephone> telephone { get; set; }
-    public List<object> fax { get; set; }
+    public List<Fax> fax { get; set; }
     public PrimaryAddress primaryAddress { get; set; }
     public RegisteredAddress registeredAddress { get; set; }
     public MailingAddress mailingAddress { get; set; }
-    public List<object> stockExchanges { get; set; }
+    public List<StockExchange> stockExchanges { get; set; }
     public List<object> thirdPartyAssessment { get; set; }
-    public List<object> registrationNumbers { get; set; }
+    public List<RegistrationNumber> registrationNumbers { get; set; }
     public List<IndustryCode> industryCodes { get; set; }
     public BusinessEntityType businessEntityType { get; set; }
     public string controlOwnershipDate { get; set; }
@@ -230,6 +233,9 @@ public class Organization
 
 public class Parent
 {
+    public string duns { get; set; }
+    public string primaryName { get; set; }
+    public PrimaryAddress primaryAddress { get; set; }
 }
 
 public class PopulationRank
@@ -403,4 +409,55 @@ public class YearlyRevenue
 {
     public double value { get; set; }
     public string currency { get; set; }
+}
+
+public class TradeStyleName
+{
+    public string name { get; set; }
+    public int priority { get; set; }
+}
+
+public class WebsiteAddress
+{
+    public string url { get; set; }
+    public string domainName { get; set; }
+}
+
+public class Fax
+{
+    public string faxNumber { get; set; }
+    public string isdCode { get; set; }
+}
+
+public class StockExchange
+{
+    public string tickerName { get; set; }
+    public ExchangeName exchangeName { get; set; }
+    public ExchangeCountry exchangeCountry { get; set; }
+}
+
+public class ExchangeName
+{
+    public string description { get; set; }
+}
+
+public class ExchangeCountry
+{
+    public string isoAlpha2Code { get; set; }
+}
+
+public class RegistrationNumber
+{
+    public string registrationNumber { get; set; }
+    public string typeDescription { get; set; }
+    public int typeDnBCode { get; set; }
+    public RegistrationNumberClass registrationNumberClass { get; set; }
+    public bool? isPreferredRegistrationNumber { get; set; }
+    public string registrationLocation { get; set; }
+}
+
+public class RegistrationNumberClass
+{
+    public string description { get; set; }
+    public int dnbCode { get; set; }
 }
