@@ -170,6 +170,16 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             }
 
             var organization = data.organization ?? data.embeddedProduct.organization;
+
+            // Not using industry codes from extended match API
+            if (data.embeddedProduct.organization != null)
+            {
+                if (organization.industryCodes != null && organization.industryCodes.Any())
+                {
+                    organization.industryCodes.Clear();
+                }
+            }
+
             if (organization == null)
             {
                 throw new ApplicationException("Could not execute external search query - DnB returned empty organization");
@@ -240,20 +250,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.OriginEntityCode = code;
         metadata.Codes.Add(request.EntityMetaData.OriginEntityCode);
 
-        var domesticUltimateDuns = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.duns;
-        var globalUltimateDuns = resultItem.Data.organization?.corporateLinkage?.globalUltimate?.duns;
-
-        if (!string.IsNullOrWhiteSpace(globalUltimateDuns))
-        {
-            var globalCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", globalUltimateDuns);
-            metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(request.EntityMetaData.OriginEntityCode), new EntityReference(globalCode), "/GlobalUltimateParent"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(domesticUltimateDuns))
-        {
-            var domesticCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", domesticUltimateDuns);
-            metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(request.EntityMetaData.OriginEntityCode), new EntityReference(domesticCode), "/DomesticUltimateParent"));
-        }
+        PopulatePrimaryAddresses(metadata, resultItem);
 
         if (resultItem.Data.organization?.dunsControlStatus != null)
         {
@@ -274,32 +271,22 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                 metadata.Properties[StaticDnBVocabulary.BusinessPartner.OperatingStatusDescription] = resultItem.Data.organization.dunsControlStatus.operatingStatus?.description.PrintIfAvailable();
             }
         }
+
         // DUNS Numbers
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.Duns] = resultItem.Data.organization?.duns;
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateDuns] = domesticUltimateDuns;
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateDuns] = globalUltimateDuns;
-
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateDuns] = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.duns;
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateDuns] = resultItem.Data.organization?.corporateLinkage?.globalUltimate?.duns;
 
         //resultItem.Data.organization.telephone
 
         // Business Information
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryBusinessName] = resultItem.Data.organization?.primaryName;
-
-        PopulatePrimaryAddress(metadata, resultItem.Data.organization?.primaryAddress);
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDnbCode] = resultItem.Data.organization?.businessEntityType?.dnbCode.PrintIfAvailable();
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization?.businessEntityType?.description;
 
         //metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = resultItem.Data.organization.websiteAddress.First()..PrintIfAvailable();
 
-        if (resultItem.Data.organization?.industryCodes != null)
-        {
-            foreach (var industryCode in resultItem.Data.organization.industryCodes)
-            {
-                var industryEntityCode = new EntityCode("/IndustrySIC", "DnB", industryCode.code);
-                metadata.OutgoingEdges.Add(new EntityEdge(new EntityReference(request.EntityMetaData.OriginEntityCode), new EntityReference(industryEntityCode), "/IndustrySic"));
-            }
-        }
-
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDnbCode] = resultItem.Data.organization?.businessEntityType?.dnbCode.PrintIfAvailable();
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization?.businessEntityType?.description;
+        PopulateIndustryCodes(metadata, resultItem);
     }
 
     public IEnumerable<EntityType> Accepts(IDictionary<string, object> config, IProvider provider) => Accepts(config);
@@ -344,85 +331,48 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         this.PopulateMetadata(clue.Data.EntityData, resultItem, request);
 
-        //Create all Companies from Ultimate and Global Parents
-        if (resultItem.Data.organization.corporateLinkage?.domesticUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(resultItem.Data.organization.corporateLinkage.domesticUltimate?.duns))
-        {
-            var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.domesticUltimate.duns);
-            var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
-
-            //metadata.OutgoingEdges.Add();
-            domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
-            //TODO: add Name
-
-            domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryName;
-            domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
-
-            domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
-
-            PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress);
-
-            yield return domesticUltimateClue;
-        }
-
-        if (resultItem.Data.organization.corporateLinkage?.globalUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(resultItem.Data.organization.corporateLinkage.globalUltimate?.duns))
-        {
-            var domesticUltimateEntityCode = new EntityCode(request.EntityMetaData.EntityType, "DnB", resultItem.Data.organization.corporateLinkage.globalUltimate.duns);
-            var domesticUltimateClue = new Clue(domesticUltimateEntityCode, context.Organization);
-
-            //metadata.OutgoingEdges.Add();
-            domesticUltimateClue.Data.EntityData.EntityType = request.EntityMetaData.EntityType;
-            //TODO: add Name
-            domesticUltimateClue.Data.EntityData.Name = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryName;
-            domesticUltimateClue.Data.EntityData.OriginEntityCode = domesticUltimateEntityCode;
-
-            domesticUltimateClue.Data.EntityData.Codes.Add(domesticUltimateEntityCode);
-
-            PopulatePrimaryAddress(domesticUltimateClue.Data.EntityData, resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress);
-
-            yield return domesticUltimateClue;
-        }
-
-        //Create all Industry Codes
-        if (resultItem.Data.organization?.industryCodes != null)
-        {
-            foreach (var industryCode in resultItem.Data.organization.industryCodes)
-            {
-                if (industryCode == null) continue;
-                var industryEntityCode = new EntityCode("/IndustrySIC", "DnB", industryCode.code);
-                var industryClue = new Clue(industryEntityCode, context.Organization);
-
-                //metadata.OutgoingEdges.Add();
-                industryClue.Data.EntityData.EntityType = "/IndustrySIC";
-                //TODO: add Name
-                industryClue.Data.EntityData.Name = industryCode.description;
-                industryClue.Data.EntityData.OriginEntityCode = industryEntityCode;
-
-                industryClue.Data.EntityData.Codes.Add(industryEntityCode);
-
-
-                industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Description] = industryCode.description;
-                industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.TypeDescription] = industryCode.typeDescription;
-                industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.TypeDnBCode] = industryCode.typeDnBCode.PrintIfAvailable();
-                industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Priority] = industryCode.priority.PrintIfAvailable();
-                industryClue.Data.EntityData.Properties[StaticDnBVocabulary.Industry.Code] = industryCode.code;
-
-                yield return industryClue;
-            }
-        }
-
-        //Create all Senior Principals
-
-        //Create all Curren Principals
-
-        // TODO: If necessary, you can create multiple clues and return them.
-
         yield return clue;
     }
 
-    private void PopulatePrimaryAddress(IEntityMetadata metadata, PrimaryAddress primaryAddress)
+    private void PopulatePrimaryAddresses(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
     {
-        if (primaryAddress == null) return;
+        var domesticUltimateDuns = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.duns;
+        var globalUltimateDuns = resultItem.Data.organization?.corporateLinkage?.globalUltimate?.duns;
+        var duns = resultItem.Data.organization?.duns;
 
+        if (resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(domesticUltimateDuns) && domesticUltimateDuns != duns)
+        {
+            var domesticUltimatePrimaryAddress = resultItem.Data.organization.corporateLinkage.domesticUltimate.primaryAddress;
+
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressCountry] = domesticUltimatePrimaryAddress.addressCountry?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateISO2CountryCode] = domesticUltimatePrimaryAddress.addressCountry?.isoAlpha2Code;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressCountyName] = domesticUltimatePrimaryAddress.addressCounty?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressLocality] = domesticUltimatePrimaryAddress.addressLocality?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressPostalCode] = domesticUltimatePrimaryAddress.postalCode;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressRegionName] = domesticUltimatePrimaryAddress.addressRegion?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressRegionAbbreviatedName] = domesticUltimatePrimaryAddress.addressRegion?.abbreviatedName;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressStreetLine1] = domesticUltimatePrimaryAddress.streetAddress?.line1;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimatePrimaryAddressStreetLine2] = domesticUltimatePrimaryAddress.streetAddress?.line2.PrintIfAvailable();
+        }
+
+        if (resultItem.Data.organization?.corporateLinkage?.globalUltimate?.primaryAddress != null && !string.IsNullOrWhiteSpace(globalUltimateDuns) && globalUltimateDuns != duns)
+        {
+            var globalUltimatePrimaryAddress = resultItem.Data.organization.corporateLinkage.globalUltimate.primaryAddress;
+
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressCountry] = globalUltimatePrimaryAddress.addressCountry?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateISO2CountryCode] = globalUltimatePrimaryAddress.addressCountry?.isoAlpha2Code;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressCountyName] = globalUltimatePrimaryAddress.addressCounty?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressLocality] = globalUltimatePrimaryAddress.addressLocality?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressPostalCode] = globalUltimatePrimaryAddress.postalCode;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressRegionName] = globalUltimatePrimaryAddress.addressRegion?.name;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressRegionAbbreviatedName] = globalUltimatePrimaryAddress.addressRegion?.abbreviatedName;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressStreetLine1] = globalUltimatePrimaryAddress.streetAddress?.line1;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimatePrimaryAddressStreetLine2] = globalUltimatePrimaryAddress.streetAddress?.line2.PrintIfAvailable();
+        }
+
+        if (resultItem.Data.organization?.primaryAddress == null) return;
+
+        var primaryAddress = resultItem.Data.organization.primaryAddress;
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountry] = primaryAddress.addressCountry?.name;
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.ISO2CountryCode] = primaryAddress.addressCountry?.isoAlpha2Code;
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressCountyName] = primaryAddress.addressCounty?.name;
@@ -431,7 +381,22 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionName] = primaryAddress.addressRegion?.name;
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressRegionAbbreviatedName] = primaryAddress.addressRegion?.abbreviatedName;
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine1] = primaryAddress.streetAddress?.line1;
-        //metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2]         = primaryAddress.streetAddress?.line2;
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = primaryAddress.streetAddress?.line2.PrintIfAvailable();
+    }
+
+    private static void PopulateIndustryCodes(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
+    {
+        var industryCodesIndex = 0;
+        foreach (var industryCode in resultItem.Data.organization?.industryCodes ?? Enumerable.Empty<IndustryCode>())
+        {
+            metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.description"] = industryCode.description;
+            metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.typeDescription"] = industryCode.typeDescription;
+            metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.typeDnBCode"] = industryCode.typeDnBCode.PrintIfAvailable();
+            metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.priority"] = industryCode.priority.PrintIfAvailable();
+            metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.code"] = industryCode.code;
+
+            industryCodesIndex++;
+        }
     }
 
     public IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
