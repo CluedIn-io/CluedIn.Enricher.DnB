@@ -7,7 +7,7 @@ public class StockExchangesVocabulary : SimpleVocabulary
     public StockExchangesVocabulary()
     {
         VocabularyName = "DNBStockExchanges";
-        KeyPrefix = "dnb.stockExchanges";
+        KeyPrefix = "DnB.stockExchanges";
         KeySeparator = ".";
         Grouping = "/StockExchanges";
     }

@@ -7,7 +7,7 @@ public class CorporateLinkageFamilyTreeRolesPlayedVocabulary : SimpleVocabulary
     public CorporateLinkageFamilyTreeRolesPlayedVocabulary()
     {
         VocabularyName = "DNBCorporateLinkageFamilyTreeRolesPlayedVocabulary";
-        KeyPrefix = "dnb.corporateLinkage.familyTreeRolesPlayedVocabulary";
+        KeyPrefix = "DnB.corporateLinkage.familyTreeRolesPlayedVocabulary";
         KeySeparator = ".";
         Grouping = "/CorporateLinkageFamilyTreeRolesPlayedVocabulary";
     }
