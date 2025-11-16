@@ -7,7 +7,7 @@ public class WebsiteAddressVocabulary : SimpleVocabulary
     public WebsiteAddressVocabulary()
     {
         VocabularyName = "DNBWebsiteAddress";
-        KeyPrefix = "dnb.websiteAddress";
+        KeyPrefix = "DnB.websiteAddress";
         KeySeparator = ".";
         Grouping = "/WebsiteAddress";
     }
