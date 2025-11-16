@@ -177,7 +177,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             }
 
             // Not using industry codes from extended match API
-            if (data.embeddedProduct.organization != null)
+            if (data.embeddedProduct?.organization != null)
             {
                 if (organization.industryCodes != null && organization.industryCodes.Any())
                 {
@@ -520,13 +520,13 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     private static void PopulateConfidenceScore(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
     {
-        var matchCandidateConfidenceCode = resultItem.Data.matchCandidates.FirstOrDefault()?.matchQualityInformation?.confidenceCode;
+        var matchCandidateConfidenceCode = resultItem.Data?.matchCandidates?.FirstOrDefault()?.matchQualityInformation?.confidenceCode;
         var confidenceScore = 100;
 
         // Match candidate confidence code ranges from 1 (low) to 10 (high).
         // If the value is null or 0, the data is considered to come from the SearchByDUNS API,
         // and the confidence score is set to 100.
-        if (resultItem.Data.matchCandidates.FirstOrDefault() != null && matchCandidateConfidenceCode != null && matchCandidateConfidenceCode != 0)
+        if (resultItem.Data?.matchCandidates?.FirstOrDefault() != null && matchCandidateConfidenceCode != null && matchCandidateConfidenceCode != 0)
         {
             confidenceScore = (int)matchCandidateConfidenceCode * 10;
         }
