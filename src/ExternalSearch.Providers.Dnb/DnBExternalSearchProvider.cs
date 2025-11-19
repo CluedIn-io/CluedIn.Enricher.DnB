@@ -415,14 +415,14 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization?.businessEntityType?.description;
 
         // Trade Style Names
-        var tradeStyleNames = resultItem.Data.organization?.tradeStyleNames?.Select(t => t.name).Where(n => !string.IsNullOrEmpty(n)) ?? [];
+        var tradeStyleNames = resultItem.Data.organization?.tradeStyleNames?.Select(t => t.name).Where(n => !string.IsNullOrEmpty(n));
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.TradeStyleNames] = string.Join(" | ", tradeStyleNames);
 
         // WebsiteAddress
         var website = resultItem.Data.organization?.websiteAddress?.FirstOrDefault();
         if (website != null)
         {
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = website?.url;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = website.url;
         }
 
         // Telephone
@@ -436,7 +436,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         var fax = resultItem.Data.organization?.fax?.FirstOrDefault();
         if (fax != null)
         {
-            metadata.Properties[StaticDnBVocabulary.BusinessPartner.Fax] = $"+{fax?.isdCode} {fax?.faxNumber}";
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.Fax] = $"+{fax.isdCode} {fax.faxNumber}";
         }
 
         // Stock Exchanges
@@ -449,18 +449,22 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         }
 
         // Registration Numbers
-        var selectedRegistrationNumberTypes = !string.IsNullOrWhiteSpace(jobData.RegistrationNumbersKey) ? jobData.RegistrationNumbersKey.Split(",") : [];
-        var registrationNumbers = resultItem.Data.organization?.registrationNumbers.Where(x => x.typeDnBCode > 0 && selectedRegistrationNumberTypes.Contains(x.typeDnBCode.ToString()));
-        var registrationNumbersIndex = 0;
-        foreach (var registrationNumber in registrationNumbers ?? [])
-        {
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumber"] = registrationNumber.registrationNumber;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDescription"] = registrationNumber.typeDescription;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDnBCode"] = registrationNumber.typeDnBCode.PrintIfAvailable();
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.description"] = registrationNumber.registrationNumberClass?.description;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.dnbCode"] = registrationNumber.registrationNumberClass?.dnbCode.PrintIfAvailable();
+        var selectedRegistrationNumberTypes = !string.IsNullOrWhiteSpace(jobData.RegistrationNumbersKey) ? jobData.RegistrationNumbersKey.Split(",") : Array.Empty<string>();
 
-            registrationNumbersIndex++;
+        if (selectedRegistrationNumberTypes.Any())
+        {
+            var registrationNumbers = resultItem.Data.organization?.registrationNumbers?.Where(x => x.typeDnBCode > 0 && selectedRegistrationNumberTypes.Contains(x.typeDnBCode.ToString()));
+            var registrationNumbersIndex = 0;
+            foreach (var registrationNumber in registrationNumbers ?? Enumerable.Empty<RegistrationNumber>())
+            {
+                metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumber"] = registrationNumber.registrationNumber;
+                metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDescription"] = registrationNumber.typeDescription;
+                metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDnBCode"] = registrationNumber.typeDnBCode.PrintIfAvailable();
+                metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.description"] = registrationNumber.registrationNumberClass?.description;
+                metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.dnbCode"] = registrationNumber.registrationNumberClass?.dnbCode.PrintIfAvailable();
+
+                registrationNumbersIndex++;
+            }
         }
 
         // Corporate Linkage
@@ -483,18 +487,24 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateNumberOfEmployees] = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.numberOfEmployees?.FirstOrDefault()?.value.PrintIfAvailable();
 
         // Yearly Revenue
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.YearlyRevenue] = $"{resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue.FirstOrDefault().value} {resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue.FirstOrDefault().currency}";
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.YearlyRevenue] = $"{resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateYearlyRevenue] = $"{resultItem.Data.organization?.corporateLinkage?.globalUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.corporateLinkage?.globalUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateYearlyRevenue] = $"{resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
     }
 
     private static void PopulateIndustryCodes(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, DnBExternalSearchJobData jobData)
     {
-        var selectedTypes = !string.IsNullOrWhiteSpace(jobData.IndustryCodesKey) ? jobData.IndustryCodesKey.Split(",") : [];
+        var selectedTypes = !string.IsNullOrWhiteSpace(jobData.IndustryCodesKey) ? jobData.IndustryCodesKey.Split(",") : Array.Empty<string>();
 
-        var industryCodes = resultItem.Data.organization?.industryCodes.Where(x => x.typeDnBCode > 0 && selectedTypes.Contains(x.typeDnBCode.ToString()));
+        if (!selectedTypes.Any()) return;
+
+        var industryCodeValues = resultItem.Data.organization?.industryCodes?.Where(x => x.typeDnBCode > 0 && selectedTypes.Contains(x.typeDnBCode.ToString()));
+
+        var industryCodeList = industryCodeValues?.ToList();
+        if (industryCodeValues == null || !industryCodeList.Any()) return;
+
         var industryCodesIndex = 0;
-        foreach (var industryCode in industryCodes ?? [])
+        foreach (var industryCode in industryCodeList)
         {
             metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.description"] = industryCode.description;
             metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.typeDescription"] = industryCode.typeDescription;

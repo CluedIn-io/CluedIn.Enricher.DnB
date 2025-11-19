@@ -1,5 +1,4 @@
 ﻿using CluedIn.Core.Data.Vocabularies;
-using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 
 namespace CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
 
