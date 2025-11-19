@@ -50,8 +50,9 @@ public static class DnBConstants
         public const string AcceptedEntityType = "acceptedEntityType";
         public const string DunsNumberKey = "dunsNumberKey";
         public const string OrgNameKey = "orgNameKey";
-        public const string OrgAddressKey = "orgAddressKey";
         public const string OrgCountryCodeKey = "orgCountryCodeKey";
+        public const string RegistrationNumbersKey = "registrationNumbersKey";
+        public const string IndustryCodesKey = "industryCodesKey";
         public const string AuthUrl = "DNB_AUTH_URL";
         public const string AuthKey = "DNB_AUTH_KEY";
         public const string AuthSecret = "DNB_AUTH_SECRET";
@@ -80,13 +81,6 @@ public static class DnBConstants
     {
         new()
         {
-            DisplayName = "Organization Name Vocabulary Key",
-            Type = "vocabularyKeySelector",
-            IsRequired = false,
-            Name = KeyName.OrgNameKey
-        },
-        new()
-        {
             DisplayName = "DUNS Vocabulary Key",
             Type = "vocabularyKeySelector",
             IsRequired = false,
@@ -94,10 +88,10 @@ public static class DnBConstants
         },
         new()
         {
-            DisplayName = "Organization Address Vocabulary Key",
+            DisplayName = "Organization Name Vocabulary Key",
             Type = "vocabularyKeySelector",
             IsRequired = false,
-            Name = KeyName.OrgAddressKey
+            Name = KeyName.OrgNameKey
         },
         new()
         {
@@ -105,6 +99,24 @@ public static class DnBConstants
             Type = "vocabularyKeySelector",
             IsRequired = false,
             Name = KeyName.OrgCountryCodeKey
+        },
+        new()
+        {
+            DisplayName = "Industry Code Types",
+            Type = "input",
+            IsRequired = false,
+            Name = KeyName.IndustryCodesKey,
+            Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788)",
+            ValidationRules = [new Dictionary<string, string> { { "regex", "^[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }]
+        },
+        new()
+        {
+            DisplayName = "Registration Number Types",
+            Type = "input",
+            IsRequired = false,
+            Name = KeyName.RegistrationNumbersKey,
+            Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,13068)",
+            ValidationRules = [new Dictionary<string, string> { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }]
         },
         // Match and Append 
         new()

@@ -176,15 +176,6 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                 throw new ApplicationException("Could not execute external search query - DnB returned empty organization");
             }
 
-            // Not using industry codes from extended match API
-            if (data.embeddedProduct?.organization != null)
-            {
-                if (organization.industryCodes != null && organization.industryCodes.Any())
-                {
-                    organization.industryCodes.Clear();
-                }
-            }
-
             data.organization = organization;
             yield return new ExternalSearchQueryResult<DNBResponse>(query, data);
             yield break;
@@ -218,11 +209,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         return responseContent.AccessToken;
     }
 
-    private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
+    private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
     {
         var metadata = new EntityMetadataPart();
 
-        this.PopulateMetadata(metadata, resultItem, request);
+        this.PopulateMetadata(metadata, resultItem, request, jobData);
 
         return metadata;
     }
@@ -239,7 +230,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         return CodeOrigin.CluedIn.CreateSpecific("DnB");
     }
 
-    private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request)
+    private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
     {
         var code = this.GetOriginEntityCode(resultItem, request, request.Queries.FirstOrDefault());
         //var firstMatch = resultItem.Data.matchCandidates[0];
@@ -252,9 +243,9 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         PopulatePrimaryAddresses(metadata, resultItem);
 
-        PopulateOrganizationInfo(metadata, resultItem);
+        PopulateOrganizationInfo(metadata, resultItem, jobData);
 
-        PopulateIndustryCodes(metadata, resultItem);
+        PopulateIndustryCodes(metadata, resultItem, jobData);
 
         PopulateConfidenceScore(metadata, resultItem);
     }
@@ -298,8 +289,9 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         var resultItem = result.As<DNBResponse>();
         var code = this.GetOriginEntityCode(resultItem, request, query);
         var clue = new Clue(code, context.Organization);
+        var jobData = new DnBExternalSearchJobData(config);
 
-        this.PopulateMetadata(clue.Data.EntityData, resultItem, request);
+        this.PopulateMetadata(clue.Data.EntityData, resultItem, request, jobData);
 
         yield return clue;
     }
@@ -386,7 +378,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.PrimaryAddressStreetLine2] = primaryAddress.streetAddress?.line2.PrintIfAvailable();
     }
 
-    private static void PopulateOrganizationInfo(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
+    private static void PopulateOrganizationInfo(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, DnBExternalSearchJobData jobData)
     {
         if (resultItem.Data.organization?.dunsControlStatus != null)
         {
@@ -423,65 +415,50 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization?.businessEntityType?.description;
 
         // Trade Style Names
-        var tradeStyleNameIndex = 0;
-        foreach (var tradeStyleName in resultItem.Data.organization?.tradeStyleNames ?? Enumerable.Empty<TradeStyleName>())
-        {
-            metadata.Properties[$"{StaticDnBVocabulary.TradeStyleNames.KeyPrefix}{StaticDnBVocabulary.TradeStyleNames.KeySeparator}{tradeStyleNameIndex}.name"] = tradeStyleName.name;
-            metadata.Properties[$"{StaticDnBVocabulary.TradeStyleNames.KeyPrefix}{StaticDnBVocabulary.TradeStyleNames.KeySeparator}{tradeStyleNameIndex}.priority"] = tradeStyleName.priority.PrintIfAvailable();
-
-            tradeStyleNameIndex++;
-        }
+        var tradeStyleNames = resultItem.Data.organization?.tradeStyleNames?.Select(t => t.name).Where(n => !string.IsNullOrEmpty(n)) ?? [];
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.TradeStyleNames] = string.Join(" | ", tradeStyleNames);
 
         // WebsiteAddress
-        var websiteAddressIndex = 0;
-        foreach (var websiteAddress in resultItem.Data.organization?.websiteAddress ?? Enumerable.Empty<WebsiteAddress>())
+        var website = resultItem.Data.organization?.websiteAddress?.FirstOrDefault();
+        if (website != null)
         {
-            metadata.Properties[$"{StaticDnBVocabulary.WebsiteAddress.KeyPrefix}{StaticDnBVocabulary.WebsiteAddress.KeySeparator}{websiteAddressIndex}.url"] = websiteAddress.url;
-            metadata.Properties[$"{StaticDnBVocabulary.WebsiteAddress.KeyPrefix}{StaticDnBVocabulary.WebsiteAddress.KeySeparator}{websiteAddressIndex}.domainName"] = websiteAddress.domainName;
-
-            websiteAddressIndex++;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = website?.url;
         }
 
         // Telephone
-        var telephoneIndex = 0;
-        foreach (var telephone in resultItem.Data.organization?.telephone ?? Enumerable.Empty<Telephone>())
+        var telephone = resultItem.Data.organization?.telephone?.FirstOrDefault();
+        if (telephone != null)
         {
-            metadata.Properties[$"{StaticDnBVocabulary.Telephone.KeyPrefix}{StaticDnBVocabulary.Telephone.KeySeparator}{telephoneIndex}.telephoneNumber"] = telephone.telephoneNumber;
-            metadata.Properties[$"{StaticDnBVocabulary.Telephone.KeyPrefix}{StaticDnBVocabulary.Telephone.KeySeparator}{telephoneIndex}.isdCode"] = telephone.isdCode;
-
-            telephoneIndex++;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.Telephone] = $"+{telephone.isdCode} {telephone.telephoneNumber}";
         }
 
         // Fax
-        var faxIndex = 0;
-        foreach (var fax in resultItem.Data.organization?.fax ?? Enumerable.Empty<Fax>())
+        var fax = resultItem.Data.organization?.fax?.FirstOrDefault();
+        if (fax != null)
         {
-            metadata.Properties[$"{StaticDnBVocabulary.Fax.KeyPrefix}{StaticDnBVocabulary.Fax.KeySeparator}{faxIndex}.faxNumber"] = fax.faxNumber;
-            metadata.Properties[$"{StaticDnBVocabulary.Fax.KeyPrefix}{StaticDnBVocabulary.Fax.KeySeparator}{faxIndex}.isdCode"] = fax.isdCode;
-
-            faxIndex++;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.Fax] = $"+{fax?.isdCode} {fax?.faxNumber}";
         }
 
         // Stock Exchanges
-        var stockExchangesIndex = 0;
-        foreach (var stockExchange in resultItem.Data.organization?.stockExchanges ?? Enumerable.Empty<StockExchange>())
+        var primaryStockExchange = resultItem.Data.organization?.stockExchanges?.FirstOrDefault(x => x.isPrimary == true);
+        if (primaryStockExchange != null)
         {
-            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.tickerName"] = stockExchange.tickerName;
-            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.exchangeName.description"] = stockExchange.exchangeName?.description;
-            metadata.Properties[$"{StaticDnBVocabulary.StockExchanges.KeyPrefix}{StaticDnBVocabulary.StockExchanges.KeySeparator}{stockExchangesIndex}.exchangeCountry.exchangeCountry"] = stockExchange.exchangeCountry?.isoAlpha2Code;
-
-            stockExchangesIndex++;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.StockExchangeTickerName] = primaryStockExchange.tickerName;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.StockExchangeName] = primaryStockExchange.exchangeName?.description;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.StockExchangeCountryCode] = primaryStockExchange.exchangeCountry?.isoAlpha2Code;
         }
 
         // Registration Numbers
+        var selectedRegistrationNumberTypes = !string.IsNullOrWhiteSpace(jobData.RegistrationNumbersKey) ? jobData.RegistrationNumbersKey.Split(",") : [];
+        var registrationNumbers = resultItem.Data.organization?.registrationNumbers.Where(x => x.typeDnBCode > 0 && selectedRegistrationNumberTypes.Contains(x.typeDnBCode.ToString()));
         var registrationNumbersIndex = 0;
-        foreach (var registrationNumbers in resultItem.Data.organization?.registrationNumbers ?? Enumerable.Empty<RegistrationNumber>())
+        foreach (var registrationNumber in registrationNumbers ?? [])
         {
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumber"] = registrationNumbers.registrationNumber;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDescription"] = registrationNumbers.typeDescription;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDnBCode"] = registrationNumbers.typeDnBCode.PrintIfAvailable();
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.description"] = registrationNumbers.registrationNumberClass?.description;
-            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.dnbCode"] = registrationNumbers.registrationNumberClass?.dnbCode.PrintIfAvailable();
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumber"] = registrationNumber.registrationNumber;
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDescription"] = registrationNumber.typeDescription;
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.typeDnBCode"] = registrationNumber.typeDnBCode.PrintIfAvailable();
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.description"] = registrationNumber.registrationNumberClass?.description;
+            metadata.Properties[$"{StaticDnBVocabulary.RegistrationNumbers.KeyPrefix}{StaticDnBVocabulary.RegistrationNumbers.KeySeparator}{registrationNumbersIndex}.registrationNumberClass.dnbCode"] = registrationNumber.registrationNumberClass?.dnbCode.PrintIfAvailable();
 
             registrationNumbersIndex++;
         }
@@ -500,13 +477,24 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.HierarchyLevel] = resultItem.Data.organization?.corporateLinkage?.hierarchyLevel.PrintIfAvailable();
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateFamilyTreeMembersCount] = resultItem.Data.organization?.corporateLinkage?.globalUltimateFamilyTreeMembersCount.PrintIfAvailable();
 
-        //metadata.Properties[StaticDnBVocabulary.BusinessPartner.WebsiteUrl] = resultItem.Data.organization.websiteAddress.First()..PrintIfAvailable();
+        // Number of Employees
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.NumberOfEmployees] = resultItem.Data.organization?.numberOfEmployees?.FirstOrDefault()?.value.PrintIfAvailable();
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateNumberOfEmployees] = resultItem.Data.organization?.corporateLinkage?.globalUltimate?.numberOfEmployees?.FirstOrDefault()?.value.PrintIfAvailable();
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateNumberOfEmployees] = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.numberOfEmployees?.FirstOrDefault()?.value.PrintIfAvailable();
+
+        // Yearly Revenue
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.YearlyRevenue] = $"{resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue.FirstOrDefault().value} {resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue.FirstOrDefault().currency}";
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateYearlyRevenue] = $"{resultItem.Data.organization?.corporateLinkage?.globalUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.corporateLinkage?.globalUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateYearlyRevenue] = $"{resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
     }
 
-    private static void PopulateIndustryCodes(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem)
+    private static void PopulateIndustryCodes(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, DnBExternalSearchJobData jobData)
     {
+        var selectedTypes = !string.IsNullOrWhiteSpace(jobData.IndustryCodesKey) ? jobData.IndustryCodesKey.Split(",") : [];
+
+        var industryCodes = resultItem.Data.organization?.industryCodes.Where(x => x.typeDnBCode > 0 && selectedTypes.Contains(x.typeDnBCode.ToString()));
         var industryCodesIndex = 0;
-        foreach (var industryCode in resultItem.Data.organization?.industryCodes ?? Enumerable.Empty<IndustryCode>())
+        foreach (var industryCode in industryCodes ?? [])
         {
             metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.description"] = industryCode.description;
             metadata.Properties[$"{StaticDnBVocabulary.Industry.KeyPrefix}{StaticDnBVocabulary.Industry.KeySeparator}{industryCodesIndex}.typeDescription"] = industryCode.typeDescription;
@@ -537,7 +525,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     public IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
     {
         var resultItem = result.As<DNBResponse>();
-        return this.CreateMetadata(resultItem, request);
+        var jobData = new DnBExternalSearchJobData(config);
+        return this.CreateMetadata(resultItem, request, jobData);
     }
 
     public IPreviewImage GetPrimaryEntityPreviewImage(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)

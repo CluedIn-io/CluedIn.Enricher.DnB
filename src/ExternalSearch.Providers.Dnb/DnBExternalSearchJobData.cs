@@ -10,8 +10,9 @@ public class DnBExternalSearchJobData : CrawlJobData
         AcceptedEntityType = GetValue<string>(configuration, DnBConstants.KeyName.AcceptedEntityType);
         OrgNameKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgNameKey);
         DunsNumberKey = GetValue<string>(configuration, DnBConstants.KeyName.DunsNumberKey);
-        OrgAddressKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgAddressKey);
         OrgCountryCodeKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgCountryCodeKey);
+        IndustryCodesKey = GetValue<string>(configuration, DnBConstants.KeyName.IndustryCodesKey);
+        RegistrationNumbersKey = GetValue<string>(configuration, DnBConstants.KeyName.RegistrationNumbersKey);
         AuthUrl = GetValue<string>(configuration, DnBConstants.KeyName.AuthUrl);
         AuthKey = GetValue<string>(configuration, DnBConstants.KeyName.AuthKey);
         AuthSecret = GetValue<string>(configuration, DnBConstants.KeyName.AuthSecret);
@@ -29,8 +30,9 @@ public class DnBExternalSearchJobData : CrawlJobData
             { DnBConstants.KeyName.AcceptedEntityType, AcceptedEntityType },
             { DnBConstants.KeyName.OrgNameKey, OrgNameKey },
             { DnBConstants.KeyName.DunsNumberKey, DunsNumberKey },
-            { DnBConstants.KeyName.OrgAddressKey, OrgAddressKey },
             { DnBConstants.KeyName.OrgCountryCodeKey, OrgCountryCodeKey },
+            { DnBConstants.KeyName.IndustryCodesKey, IndustryCodesKey},
+            { DnBConstants.KeyName.RegistrationNumbersKey, RegistrationNumbersKey},
             { DnBConstants.KeyName.AuthUrl, AuthUrl },
             { DnBConstants.KeyName.AuthKey, AuthKey },
             { DnBConstants.KeyName.AuthSecret, AuthSecret },
@@ -45,8 +47,9 @@ public class DnBExternalSearchJobData : CrawlJobData
     public string AcceptedEntityType { get; set; }
     public string OrgNameKey { get; set; }
     public string DunsNumberKey { get; set; }
-    public string OrgAddressKey { get; set; }
     public string OrgCountryCodeKey { get; set; }
+    public string IndustryCodesKey { get; set; }
+    public string RegistrationNumbersKey { get; set; }
     public string AuthUrl { get; set; }
     public string AuthKey { get; set; }
     public string AuthSecret { get; set; }
