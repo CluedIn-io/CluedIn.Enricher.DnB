@@ -7,9 +7,13 @@ using CluedIn.Core.Data.Vocabularies;
 using CluedIn.Core.ExternalSearch;
 using CluedIn.Core.Providers;
 using CluedIn.Crawling.Helpers;
+using CluedIn.ExternalSearch.Providers.DnB.Custom;
+using CluedIn.ExternalSearch.Providers.DnB.Helper;
 using CluedIn.ExternalSearch.Providers.DnB.Model.AuthResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
+using Microsoft.Extensions.Caching.Memory;
+using Nest;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -17,11 +21,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using CluedIn.ExternalSearch.Providers.DnB.Custom;
-using CluedIn.ExternalSearch.Providers.DnB.Helper;
-using Microsoft.Extensions.Caching.Memory;
 using EntityType = CluedIn.Core.Data.EntityType;
+using ExecutionContext = CluedIn.Core.ExecutionContext;
 
 namespace CluedIn.ExternalSearch.Providers.DnB;
 
@@ -43,6 +46,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     public IntegrationType Type => IntegrationType.Enrichment;
 
     private static readonly EntityType[] DefaultAcceptedEntityTypes = { EntityType.Organization };
+    private static readonly SemaphoreSlim semaphore = new(1, 1);
     /**********************************************************************************************************
      * CONSTRUCTORS
      **********************************************************************************************************/
@@ -209,19 +213,24 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
     }
 
-
     private static async Task<string> GetAuthToken(ExecutionContext context, DnBExternalSearchJobData jobData, Guid providerDefinitionId, bool bypassCache)
     {
         var memoryCache = context.ApplicationContext.Container.Resolve<IMemoryCache>();
         var cacheKey = $"DnBDirectPlusService.AuthToken({providerDefinitionId})";
 
-        if (!bypassCache && memoryCache.TryGetValue(cacheKey, out var cached))
+        if (!bypassCache && memoryCache.TryGetValue(cacheKey, out string cached))
         {
-            return (string)cached;
+            return cached;
         }
 
-        using (LockHelper.GetDistributedLockAsync(context.ApplicationContext, $"DnB_GetAuthKey_({providerDefinitionId})_Lock", TimeSpan.FromMinutes(1)).GetAwaiter().GetResult())
+        await semaphore.WaitAsync();
+        try
         {
+            if (!bypassCache && memoryCache.TryGetValue(cacheKey, out cached))
+            {
+                return cached;
+            }
+
             var key = jobData.AuthKey;
             var secret = jobData.AuthSecret;
             var bytes = Encoding.ASCII.GetBytes($"{key}:{secret}");
@@ -245,6 +254,10 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             }
 
             return responseContent.AccessToken;
+        }
+        finally
+        {
+            semaphore.Release();
         }
     }
 
