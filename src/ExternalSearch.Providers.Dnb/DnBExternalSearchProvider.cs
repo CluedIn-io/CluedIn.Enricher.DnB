@@ -415,8 +415,12 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.BusinessEntityTypeDescription] = resultItem.Data.organization?.businessEntityType?.description;
 
         // Trade Style Names
-        var tradeStyleNames = resultItem.Data.organization?.tradeStyleNames?.Select(t => t.name).Where(n => !string.IsNullOrEmpty(n));
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.TradeStyleNames] = string.Join(" | ", tradeStyleNames);
+        var tradeStyleNameValues = resultItem.Data.organization?.tradeStyleNames?.Select(t => t.name).Where(n => !string.IsNullOrEmpty(n));
+        var tradeStyleNames = tradeStyleNameValues?.ToList();
+        if (tradeStyleNameValues != null && tradeStyleNames.Any())
+        {
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.TradeStyleNames] = string.Join(" | ", tradeStyleNames);
+        }
 
         // WebsiteAddress
         var website = resultItem.Data.organization?.websiteAddress?.FirstOrDefault();
@@ -427,14 +431,14 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         // Telephone
         var telephone = resultItem.Data.organization?.telephone?.FirstOrDefault();
-        if (telephone != null)
+        if (telephone != null && !string.IsNullOrEmpty(telephone.isdCode) && !string.IsNullOrEmpty(telephone.telephoneNumber))
         {
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.Telephone] = $"+{telephone.isdCode} {telephone.telephoneNumber}";
         }
 
         // Fax
         var fax = resultItem.Data.organization?.fax?.FirstOrDefault();
-        if (fax != null)
+        if (fax != null && !string.IsNullOrEmpty(fax.isdCode) && !string.IsNullOrEmpty(fax.faxNumber))
         {
             metadata.Properties[StaticDnBVocabulary.BusinessPartner.Fax] = $"+{fax.isdCode} {fax.faxNumber}";
         }
@@ -487,9 +491,17 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateNumberOfEmployees] = resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.numberOfEmployees?.FirstOrDefault()?.value.PrintIfAvailable();
 
         // Yearly Revenue
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.YearlyRevenue] = $"{resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateYearlyRevenue] = $"{resultItem.Data.organization?.corporateLinkage?.globalUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.corporateLinkage?.globalUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
-        metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateYearlyRevenue] = $"{resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.value} {resultItem.Data.organization?.corporateLinkage?.domesticUltimate?.financials?.FirstOrDefault()?.yearlyRevenue?.FirstOrDefault()?.currency}";
+        var orgFinancial = resultItem.Data.organization?.financials?.FirstOrDefault();
+        var orgYearlyRevenue = orgFinancial?.yearlyRevenue?.FirstOrDefault();
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.YearlyRevenue] = orgYearlyRevenue != null && !string.IsNullOrEmpty(orgYearlyRevenue.currency) ? $"{orgYearlyRevenue.value} {orgYearlyRevenue.currency}" : null;
+        
+        var globalUltimateFinancial = resultItem.Data.organization?.globalUltimate?.financials?.FirstOrDefault();
+        var globalUltimateYearlyRevenue = globalUltimateFinancial?.yearlyRevenue?.FirstOrDefault();
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateYearlyRevenue] = globalUltimateYearlyRevenue != null && !string.IsNullOrEmpty(globalUltimateYearlyRevenue.currency) ? $"{globalUltimateYearlyRevenue.value} {globalUltimateYearlyRevenue.currency}" : null;
+        
+        var domesticUltimateFinancial = resultItem.Data.organization?.domesticUltimate?.financials?.FirstOrDefault();
+        var domesticUltimateYearlyRevenue = domesticUltimateFinancial?.yearlyRevenue?.FirstOrDefault();
+        metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateYearlyRevenue] = domesticUltimateYearlyRevenue != null && !string.IsNullOrEmpty(domesticUltimateYearlyRevenue.currency) ? $"{domesticUltimateYearlyRevenue.value} {domesticUltimateYearlyRevenue.currency}" : null;
     }
 
     private static void PopulateIndustryCodes(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, DnBExternalSearchJobData jobData)

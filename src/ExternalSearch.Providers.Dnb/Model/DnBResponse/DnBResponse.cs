@@ -235,6 +235,8 @@ public class Organization
     public SocioEconomicInformation socioEconomicInformation { get; set; }
     public bool isStandalone { get; set; }
     public CorporateLinkage corporateLinkage { get; set; }
+    public GlobalUltimate globalUltimate { get; set; }
+    public DomesticUltimate domesticUltimate { get; set; }
 }
 
 public class Parent
