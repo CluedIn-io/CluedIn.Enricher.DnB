@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using EntityType = CluedIn.Core.Data.EntityType;
 
 namespace CluedIn.ExternalSearch.Providers.DnB;
@@ -114,10 +116,9 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     }
 
-    private static IEnumerable<IExternalSearchQueryResult> InternalExecuteSearch(IExternalSearchQuery query, DnBExternalSearchJobData jobData)
+    private static IEnumerable<IExternalSearchQueryResult> InternalExecuteSearch(ExecutionContext context, IExternalSearchQuery query, DnBExternalSearchJobData jobData)
     {
-        //TODO: replace hardcoded value
-        var token = GetAuthToken(jobData);
+        var token = GetAuthToken(context, jobData, query.ProviderDefinitionId).GetAwaiter().GetResult();
         var dunsNumber      = query.QueryParameters.GetValue("id")?.FirstOrDefault();
         var orgName         = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgNameKey)?.FirstOrDefault();
         var orgCountryCode  = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgCountryCodeKey)?.FirstOrDefault();
@@ -189,24 +190,33 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
     }
 
-    private static string GetAuthToken(DnBExternalSearchJobData jobData)
+    private static async Task<string> GetAuthToken(ExecutionContext context, DnBExternalSearchJobData jobData, Guid providerDefinitionId)
     {
-        var key = jobData.AuthKey;
-        var secret = jobData.AuthSecret;
-        byte[] bytes = Encoding.ASCII.GetBytes($"{key}:{secret}");
-
-        var restClient = new RestClient(jobData.AuthUrl)
+        var memoryCache = context.ApplicationContext.Container.Resolve<IMemoryCache>();
+        var authTokenKey = $"DnBDirectPlusService.AuthToken({providerDefinitionId})";
+        var token = await memoryCache.GetOrCreateAsync(authTokenKey, async entry =>
         {
-            Timeout = -1
-        };
-        var request = new RestRequest(Method.POST);
-        request.AddHeader("Content-Type", "application/json");
-        request.AddHeader("Authorization", $"Basic {Convert.ToBase64String(bytes)}");
-        var body = jobData.AuthRequestBody;
-        request.AddParameter("application/json", body, ParameterType.RequestBody);
-        IRestResponse response = restClient.Execute(request);
-        var responseContent = JsonUtility.Deserialize<AuthResponse>(response.Content);
-        return responseContent.AccessToken;
+            var key = jobData.AuthKey;
+            var secret = jobData.AuthSecret;
+            var bytes = Encoding.ASCII.GetBytes($"{key}:{secret}");
+
+            var restClient = new RestClient(jobData.AuthUrl)
+            {
+                Timeout = -1
+            };
+            var request = new RestRequest(Method.POST);
+            request.AddHeader("Content-Type", "application/json");
+            request.AddHeader("Authorization", $"Basic {Convert.ToBase64String(bytes)}");
+            var body = jobData.AuthRequestBody;
+            request.AddParameter("application/json", body, ParameterType.RequestBody);
+            var response = await restClient.ExecuteAsync(request);
+            var responseContent = JsonUtility.Deserialize<AuthResponse>(response.Content);
+
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12); // Token will live for 24 hours, but cache it for 12 hours to avoid getting expired token
+            return responseContent.AccessToken;
+        });
+
+        return token;
     }
 
     private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
@@ -281,7 +291,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     {
         var jobData = new DnBExternalSearchJobData(config);
 
-        foreach (var externalSearchQueryResult in InternalExecuteSearch(query, jobData)) yield return externalSearchQueryResult;
+        foreach (var externalSearchQueryResult in InternalExecuteSearch(context, query, jobData)) yield return externalSearchQueryResult;
     }
 
     public IEnumerable<Clue> BuildClues(ExecutionContext context, IExternalSearchQuery query, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
@@ -566,7 +576,9 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             const string dummyDunsNumber = "515042588"; // Pfizer Duns number
             const string dummyOrgName = "Pfizer";
             const string dummyOrgCountryCode = "US";
-            var token = GetAuthToken(jobData);
+            var providerDefinitionGuid = new Guid("dc866ac5-89fa-49c9-9eb8-398c3872b8e6");
+
+            var token = GetAuthToken(context, jobData, providerDefinitionGuid).GetAwaiter().GetResult();
 
             var client = new RestClient(jobData.DnBBaseUrl);
 
