@@ -18,6 +18,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using CluedIn.ExternalSearch.Providers.DnB.Custom;
+using CluedIn.ExternalSearch.Providers.DnB.Helper;
 using Microsoft.Extensions.Caching.Memory;
 using EntityType = CluedIn.Core.Data.EntityType;
 
@@ -61,7 +63,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     public override IEnumerable<Clue> BuildClues(ExecutionContext context, IExternalSearchQuery query, IExternalSearchQueryResult result, IExternalSearchRequest request) => BuildClues(context, query, result, request, null, null).AsEnumerable();
 
-    public override IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request) =>  GetPrimaryEntityMetadata(context, result, request, null, null);
+    public override IEntityMetadata GetPrimaryEntityMetadata(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request) => GetPrimaryEntityMetadata(context, result, request, null, null);
 
     public override IPreviewImage GetPrimaryEntityPreviewImage(ExecutionContext context, IExternalSearchQueryResult result, IExternalSearchRequest request) => throw new NotSupportedException();
 
@@ -102,26 +104,38 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             }
         }
 
-        var orgName        = GetValue(request, config, DnBConstants.KeyName.OrgNameKey,        Core.Data.Vocabularies.Vocabularies.CluedInOrganization.OrganizationName)  ?.FirstOrDefault();
+        var orgName = GetValue(request, config, DnBConstants.KeyName.OrgNameKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.OrganizationName)?.FirstOrDefault();
         var orgCountryCode = GetValue(request, config, DnBConstants.KeyName.OrgCountryCodeKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressCountryCode)?.FirstOrDefault();
 
-        var orgNameAndCountry     = !string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode);
+        var orgNameAndCountry = !string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode);
         var versionIdAndProductId = !string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId);
-        var blockIds              = !string.IsNullOrWhiteSpace(jobData.BlockIds);
+        var blockIds = !string.IsNullOrWhiteSpace(jobData.BlockIds);
 
         if (orgNameAndCountry && (versionIdAndProductId || blockIds))
         {
-            yield return new ExternalSearchQuery(this, entityType, new Dictionary<string, string>() { { DnBConstants.KeyName.OrgNameKey, orgName }, { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode } } );
+            yield return new ExternalSearchQuery(this, entityType, new Dictionary<string, string>() { { DnBConstants.KeyName.OrgNameKey, orgName }, { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode } });
         }
 
     }
 
     private static IEnumerable<IExternalSearchQueryResult> InternalExecuteSearch(ExecutionContext context, IExternalSearchQuery query, DnBExternalSearchJobData jobData)
     {
-        var token = GetAuthToken(context, jobData, query.ProviderDefinitionId).GetAwaiter().GetResult();
-        var dunsNumber      = query.QueryParameters.GetValue("id")?.FirstOrDefault();
-        var orgName         = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgNameKey)?.FirstOrDefault();
-        var orgCountryCode  = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgCountryCodeKey)?.FirstOrDefault();
+        try
+        {
+            return HandleSearch(context, query, jobData, false);
+        }
+        catch (BadTokenException)
+        {
+            return HandleSearch(context, query, jobData, true);
+        }
+    }
+
+    private static IEnumerable<IExternalSearchQueryResult> HandleSearch(ExecutionContext context, IExternalSearchQuery query, DnBExternalSearchJobData jobData, bool bypassCache)
+    {
+        var token = GetAuthToken(context, jobData, query.ProviderDefinitionId, bypassCache).GetAwaiter().GetResult();
+        var dunsNumber = query.QueryParameters.GetValue("id")?.FirstOrDefault();
+        var orgName = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgNameKey)?.FirstOrDefault();
+        var orgCountryCode = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgCountryCodeKey)?.FirstOrDefault();
 
         var client = new RestClient(jobData.DnBBaseUrl);
 
@@ -159,7 +173,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         request.AddHeader("Authorization", $"Bearer {token}");
 
-        var cleanseResponse = client.ExecuteAsync(request).Result;
+        var cleanseResponse = client.ExecuteAsync(request).GetAwaiter().GetResult();
 
         if (cleanseResponse.StatusCode == HttpStatusCode.OK)
         {
@@ -182,6 +196,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             yield break;
         }
 
+        if (cleanseResponse.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new BadTokenException("Access token expired");
+        }
+
         if (cleanseResponse.ErrorException != null)
         {
             throw new AggregateException(cleanseResponse.ErrorException.Message, cleanseResponse.ErrorException);
@@ -190,11 +209,18 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
     }
 
-    private static async Task<string> GetAuthToken(ExecutionContext context, DnBExternalSearchJobData jobData, Guid providerDefinitionId)
+
+    private static async Task<string> GetAuthToken(ExecutionContext context, DnBExternalSearchJobData jobData, Guid providerDefinitionId, bool bypassCache)
     {
         var memoryCache = context.ApplicationContext.Container.Resolve<IMemoryCache>();
-        var authTokenKey = $"DnBDirectPlusService.AuthToken({providerDefinitionId})";
-        var token = await memoryCache.GetOrCreateAsync(authTokenKey, async entry =>
+        var cacheKey = $"DnBDirectPlusService.AuthToken({providerDefinitionId})";
+
+        if (!bypassCache && memoryCache.TryGetValue(cacheKey, out var cached))
+        {
+            return (string)cached;
+        }
+
+        using (LockHelper.GetDistributedLockAsync(context.ApplicationContext, $"DnB_GetAuthKey_({providerDefinitionId})_Lock", TimeSpan.FromMinutes(1)).GetAwaiter().GetResult())
         {
             var key = jobData.AuthKey;
             var secret = jobData.AuthSecret;
@@ -212,11 +238,14 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var response = await restClient.ExecuteAsync(request);
             var responseContent = JsonUtility.Deserialize<AuthResponse>(response.Content);
 
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12); // Token will live for 24 hours, but cache it for 12 hours to avoid getting expired token
-            return responseContent.AccessToken;
-        });
+            using (var entry = memoryCache.CreateEntry(cacheKey))
+            {
+                entry.Value = responseContent.AccessToken;
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24); // DnB Token lives for 24 hours
+            }
 
-        return token;
+            return responseContent.AccessToken;
+        }
     }
 
     private IEntityMetadata CreateMetadata(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
@@ -504,11 +533,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         var orgFinancial = resultItem.Data.organization?.financials?.FirstOrDefault();
         var orgYearlyRevenue = orgFinancial?.yearlyRevenue?.FirstOrDefault();
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.YearlyRevenue] = orgYearlyRevenue != null && !string.IsNullOrEmpty(orgYearlyRevenue.currency) ? $"{orgYearlyRevenue.value} {orgYearlyRevenue.currency}" : null;
-        
+
         var globalUltimateFinancial = resultItem.Data.organization?.globalUltimate?.financials?.FirstOrDefault();
         var globalUltimateYearlyRevenue = globalUltimateFinancial?.yearlyRevenue?.FirstOrDefault();
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.GlobalUltimateYearlyRevenue] = globalUltimateYearlyRevenue != null && !string.IsNullOrEmpty(globalUltimateYearlyRevenue.currency) ? $"{globalUltimateYearlyRevenue.value} {globalUltimateYearlyRevenue.currency}" : null;
-        
+
         var domesticUltimateFinancial = resultItem.Data.organization?.domesticUltimate?.financials?.FirstOrDefault();
         var domesticUltimateYearlyRevenue = domesticUltimateFinancial?.yearlyRevenue?.FirstOrDefault();
         metadata.Properties[StaticDnBVocabulary.BusinessPartner.DomesticUltimateYearlyRevenue] = domesticUltimateYearlyRevenue != null && !string.IsNullOrEmpty(domesticUltimateYearlyRevenue.currency) ? $"{domesticUltimateYearlyRevenue.value} {domesticUltimateYearlyRevenue.currency}" : null;
@@ -578,7 +607,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             const string dummyOrgCountryCode = "US";
             var providerDefinitionGuid = new Guid("dc866ac5-89fa-49c9-9eb8-398c3872b8e6");
 
-            var token = GetAuthToken(context, jobData, providerDefinitionGuid).GetAwaiter().GetResult();
+            var token = GetAuthToken(context, jobData, providerDefinitionGuid, false).GetAwaiter().GetResult();
 
             var client = new RestClient(jobData.DnBBaseUrl);
 
@@ -591,7 +620,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                 dunsRequest.AddQueryParameter("blockIDs", jobData.BlockIds);
             }
 
-            var cleanseDunsResponse = client.ExecuteAsync(dunsRequest).Result;
+            var cleanseDunsResponse = client.ExecuteAsync(dunsRequest).GetAwaiter().GetResult();
 
             if (cleanseDunsResponse.StatusCode != HttpStatusCode.OK)
             {
@@ -621,7 +650,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             extendedMatchRequest.AddQueryParameter("countryISOAlpha2Code", dummyOrgCountryCode);
             extendedMatchRequest.AddHeader("Authorization", $"Bearer {token}");
 
-            var cleanseExtendedMatchResponse = client.ExecuteAsync(extendedMatchRequest).Result;
+            var cleanseExtendedMatchResponse = client.ExecuteAsync(extendedMatchRequest).GetAwaiter().GetResult();
 
             if (cleanseExtendedMatchResponse.StatusCode != HttpStatusCode.OK)
             {
@@ -629,8 +658,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
                 return ConstructFailedConnectionResponse(cleanseExtendedMatchResponse, data);
             }
-        } 
-        catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             if (ex.Message.Contains(DnBConstants.ErrorMessages.TooManyRequests))
             {
