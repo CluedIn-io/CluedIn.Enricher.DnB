@@ -68,6 +68,8 @@ public class DnBVocabulary : SimpleVocabulary
             HeadQuarterPrimaryAddressStreetLine1 = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressStreetLine1), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             HeadQuarterPrimaryAddressStreetLine2 = group.Add(new VocabularyKey(nameof(HeadQuarterPrimaryAddressStreetLine2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             WebsiteUrl = group.Add(new VocabularyKey(nameof(WebsiteUrl), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            Telephone = group.Add(new VocabularyKey(nameof(Telephone), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            Fax = group.Add(new VocabularyKey(nameof(Fax), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             RegistrationNumber2 = group.Add(new VocabularyKey(nameof(RegistrationNumber2), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DunsControlStatusFullReportDate = group.Add(new VocabularyKey(nameof(DunsControlStatusFullReportDate), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DunsControlStatusLastUpdateDate = group.Add(new VocabularyKey(nameof(DunsControlStatusLastUpdateDate), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
@@ -84,6 +86,16 @@ public class DnBVocabulary : SimpleVocabulary
             ConfidenceScore = group.Add(new VocabularyKey("_cluedin_confidenceScore"));
             HierarchyLevel = group.Add(new VocabularyKey(nameof(HierarchyLevel), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             GlobalUltimateFamilyTreeMembersCount = group.Add(new VocabularyKey(nameof(GlobalUltimateFamilyTreeMembersCount), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            TradeStyleNames = group.Add(new VocabularyKey(nameof(TradeStyleNames), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            StockExchangeTickerName = group.Add(new VocabularyKey(nameof(StockExchangeTickerName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            StockExchangeName = group.Add(new VocabularyKey(nameof(StockExchangeName), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            StockExchangeCountryCode = group.Add(new VocabularyKey(nameof(StockExchangeCountryCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            NumberOfEmployees = group.Add(new VocabularyKey(nameof(NumberOfEmployees), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            GlobalUltimateNumberOfEmployees = group.Add(new VocabularyKey(nameof(GlobalUltimateNumberOfEmployees), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            DomesticUltimateNumberOfEmployees = group.Add(new VocabularyKey(nameof(DomesticUltimateNumberOfEmployees), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            YearlyRevenue = group.Add(new VocabularyKey(nameof(YearlyRevenue), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            GlobalUltimateYearlyRevenue = group.Add(new VocabularyKey(nameof(GlobalUltimateYearlyRevenue), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            DomesticUltimateYearlyRevenue = group.Add(new VocabularyKey(nameof(DomesticUltimateYearlyRevenue), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
         });
     }
 
@@ -143,6 +155,8 @@ public class DnBVocabulary : SimpleVocabulary
     public VocabularyKey HeadQuarterPrimaryAddressStreetLine1 { get; protected set; }
     public VocabularyKey HeadQuarterPrimaryAddressStreetLine2 { get; protected set; }
     public VocabularyKey WebsiteUrl { get; protected set; }
+    public VocabularyKey Telephone { get; protected set; }
+    public VocabularyKey Fax { get; protected set; }
     public VocabularyKey RegistrationNumber2 { get; protected set; }
     public VocabularyKey DunsControlStatusFullReportDate { get; protected set; }
     public VocabularyKey DunsControlStatusLastUpdateDate { get; protected set; }
@@ -158,4 +172,14 @@ public class DnBVocabulary : SimpleVocabulary
     public VocabularyKey ConfidenceScore { get; protected set; }
     public VocabularyKey HierarchyLevel { get; protected set; }
     public VocabularyKey GlobalUltimateFamilyTreeMembersCount { get; protected set; }
+    public VocabularyKey TradeStyleNames { get; protected set; }
+    public VocabularyKey StockExchangeTickerName { get; protected set; }
+    public VocabularyKey StockExchangeName { get; protected set; }
+    public VocabularyKey StockExchangeCountryCode { get; protected set; }
+    public VocabularyKey NumberOfEmployees { get; protected set; }
+    public VocabularyKey GlobalUltimateNumberOfEmployees { get; protected set; }
+    public VocabularyKey DomesticUltimateNumberOfEmployees { get; protected set; }
+    public VocabularyKey YearlyRevenue { get; protected set; }
+    public VocabularyKey GlobalUltimateYearlyRevenue { get; protected set; }
+    public VocabularyKey DomesticUltimateYearlyRevenue { get; protected set; }
 }

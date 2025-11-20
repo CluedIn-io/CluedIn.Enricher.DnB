@@ -71,6 +71,8 @@ public class DomesticUltimate
     public string duns { get; set; }
     public string primaryName { get; set; }
     public PrimaryAddress primaryAddress { get; set; }
+    public List<NumberOfEmployee> numberOfEmployees { get; set; }
+    public List<Financial> financials { get; set; }
 }
 
 public class DunsControlStatus
@@ -121,6 +123,8 @@ public class GlobalUltimate
     public string duns { get; set; }
     public string primaryName { get; set; }
     public PrimaryAddress primaryAddress { get; set; }
+    public List<NumberOfEmployee> numberOfEmployees { get; set; }
+    public List<Financial> financials { get; set; }
 }
 
 public class HeadQuarter
@@ -186,6 +190,8 @@ public class MostSeniorPrincipal
 public class NumberOfEmployee
 {
     public int value { get; set; }
+    public int minimumValue { get; set; }
+    public int maximumValue { get; set; }
     public string informationScopeDescription { get; set; }
     public int informationScopeDnBCode { get; set; }
     public string reliabilityDescription { get; set; }
@@ -229,6 +235,8 @@ public class Organization
     public SocioEconomicInformation socioEconomicInformation { get; set; }
     public bool isStandalone { get; set; }
     public CorporateLinkage corporateLinkage { get; set; }
+    public GlobalUltimate globalUltimate { get; set; }
+    public DomesticUltimate domesticUltimate { get; set; }
 }
 
 public class Parent
@@ -434,6 +442,7 @@ public class StockExchange
     public string tickerName { get; set; }
     public ExchangeName exchangeName { get; set; }
     public ExchangeCountry exchangeCountry { get; set; }
+    public bool? isPrimary { get; set; }
 }
 
 public class ExchangeName
