@@ -8,7 +8,6 @@ using CluedIn.Core.ExternalSearch;
 using CluedIn.Core.Providers;
 using CluedIn.Crawling.Helpers;
 using CluedIn.ExternalSearch.Providers.DnB.Custom;
-using CluedIn.ExternalSearch.Providers.DnB.Helper;
 using CluedIn.ExternalSearch.Providers.DnB.Model.AuthResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
