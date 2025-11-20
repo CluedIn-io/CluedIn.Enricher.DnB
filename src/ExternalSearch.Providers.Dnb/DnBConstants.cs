@@ -107,7 +107,10 @@ public static class DnBConstants
             IsRequired = false,
             Name = KeyName.IndustryCodesKey,
             Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788)",
-            ValidationRules = [new Dictionary<string, string> { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }]
+            ValidationRules = new List<Dictionary<string, string>>
+            {
+                new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+            }
         },
         new()
         {
@@ -116,7 +119,10 @@ public static class DnBConstants
             IsRequired = false,
             Name = KeyName.RegistrationNumbersKey,
             Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444)",
-            ValidationRules = [new Dictionary<string, string> { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }]
+            ValidationRules = new List<Dictionary<string, string>>
+            {
+                new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+            }
         },
         // Match and Append 
         new()
