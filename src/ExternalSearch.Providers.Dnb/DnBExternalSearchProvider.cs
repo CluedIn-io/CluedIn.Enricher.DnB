@@ -525,7 +525,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         // Corporate Linkage
         // Family Tree Roles Played
         var familyTreeRolesPlayedIndex = 0;
-        foreach (var role in resultItem.Data.organization?.corporateLinkage.familytreeRolesPlayed ?? Enumerable.Empty<FamilytreeRolesPlayed>())
+        foreach (var role in resultItem.Data.organization?.corporateLinkage?.familytreeRolesPlayed ?? Enumerable.Empty<FamilytreeRolesPlayed>())
         {
             metadata.Properties[$"{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeyPrefix}{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeySeparator}{familyTreeRolesPlayedIndex}.description"] = role.description;
             metadata.Properties[$"{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeyPrefix}{StaticDnBVocabulary.CorporateLinkageFamilyTreeRolesPlayedVocabulary.KeySeparator}{familyTreeRolesPlayedIndex}.dnbCode"] = role.dnbCode.PrintIfAvailable();
