@@ -12,7 +12,6 @@ using CluedIn.ExternalSearch.Providers.DnB.Model.AuthResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
 using Microsoft.Extensions.Caching.Memory;
-using Nest;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -271,14 +270,14 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     private EntityCode GetOriginEntityCode(IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, IExternalSearchQuery query)
     {
-        return new EntityCode(request.EntityMetaData.EntityType, this.GetCodeOrigin(), resultItem.Data.organization?.duns ?? $"{query.QueryKey}{request.EntityMetaData.OriginEntityCode}".ToDeterministicGuid().ToString());
+        return new EntityCode(request.EntityMetaData.EntityType, this.GetCodeOrigin(query), resultItem.Data.organization?.duns ?? $"{query.QueryKey}{request.EntityMetaData.OriginEntityCode}".ToDeterministicGuid().ToString());
     }
 
     /// <summary>Gets the code origin.</summary>
     /// <returns>The code origin</returns>
-    private CodeOrigin GetCodeOrigin()
+    private CodeOrigin GetCodeOrigin(IExternalSearchQuery query)
     {
-        return CodeOrigin.CluedIn.CreateSpecific("DnB");
+        return CodeOrigin.CluedIn.CreateSpecific($"DnB_{query.ProviderDefinitionId}");
     }
 
     private void PopulateMetadata(IEntityMetadata metadata, IExternalSearchQueryResult<DNBResponse> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
