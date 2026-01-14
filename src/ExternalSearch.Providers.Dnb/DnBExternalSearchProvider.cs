@@ -12,7 +12,6 @@ using CluedIn.ExternalSearch.Providers.DnB.Model.AuthResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
 using Microsoft.Extensions.Caching.Memory;
-using Nest;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -245,6 +244,16 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             request.AddParameter("application/json", body, ParameterType.RequestBody);
             var response = await restClient.ExecuteAsync(request);
             var responseContent = JsonUtility.Deserialize<AuthResponse>(response.Content);
+
+            if (!response.IsSuccessful)
+            {
+                throw new Exception($"Could not get access token. StatusCode: {response.StatusCode}, Status Description: {response.StatusDescription}, Error Message:{response.ErrorMessage}", response.ErrorException);
+            }
+
+            if (string.IsNullOrEmpty(responseContent?.AccessToken))
+            {
+                throw new Exception($"Access token returned is empty. StatusCode: {response.StatusCode}, Status Description: {response.StatusDescription}, Error Message:{response.ErrorMessage}");
+            }
 
             using (var entry = memoryCache.CreateEntry(cacheKey))
             {
