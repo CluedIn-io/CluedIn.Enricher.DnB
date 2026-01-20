@@ -11,7 +11,6 @@ using CluedIn.ExternalSearch.Providers.DnB.Custom;
 using CluedIn.ExternalSearch.Providers.DnB.Model.AuthResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
-using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -21,6 +20,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CluedIn.Core.Caching.MicrosoftExtensions;
 using EntityType = CluedIn.Core.Data.EntityType;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
