@@ -1,4 +1,5 @@
 ﻿using CluedIn.Core;
+using CluedIn.Core.Caching.MicrosoftExtensions;
 using CluedIn.Core.Connectors;
 using CluedIn.Core.Data;
 using CluedIn.Core.Data.Parts;
@@ -20,7 +21,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CluedIn.Core.Caching.MicrosoftExtensions;
 using EntityType = CluedIn.Core.Data.EntityType;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
@@ -108,16 +108,50 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         var orgName = GetValue(request, config, DnBConstants.KeyName.OrgNameKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.OrganizationName)?.FirstOrDefault();
         var orgCountryCode = GetValue(request, config, DnBConstants.KeyName.OrgCountryCodeKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressCountryCode)?.FirstOrDefault();
+        var orgStreetAddressLine1 = GetValue(request, config, DnBConstants.KeyName.OrgStreetAddressLine1Key, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressStreetName)?.FirstOrDefault();
+        var orgStreetAddressLine2 = GetValue(request, config, DnBConstants.KeyName.OrgStreetAddressLine2Key, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressStreetName)?.FirstOrDefault();
+        var orgPostalCode = GetValue(request, config, DnBConstants.KeyName.OrgPostalCodeKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressZipCode)?.FirstOrDefault();
+        var orgAddressLocality = GetValue(request, config, DnBConstants.KeyName.OrgAddressLocalityKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressCity)?.FirstOrDefault();
+        var orgCounty = GetValue(request, config, DnBConstants.KeyName.OrgAddressCountyKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressState)?.FirstOrDefault();
+        var orgRegion = GetValue(request, config, DnBConstants.KeyName.OrgAddressRegionKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressState)?.FirstOrDefault();
+        var orgTelephoneNumber = GetValue(request, config, DnBConstants.KeyName.OrgTelephoneNumberKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.PhoneNumber)?.FirstOrDefault();
+        var orgUrl = GetValue(request, config, DnBConstants.KeyName.OrgUrlKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.Website)?.FirstOrDefault();
+        var orgEmail = GetValue(request, config, DnBConstants.KeyName.OrgEmailKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.ContactEmail)?.FirstOrDefault();
 
-        var orgNameAndCountry = !string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode);
-        var versionIdAndProductId = !string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId);
+        var orgNameAndCountryHasValue = !string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode);
+        var versionIdAndProductIdHasValue = !string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId);
         var blockIds = !string.IsNullOrWhiteSpace(jobData.BlockIds);
 
-        if (orgNameAndCountry && (versionIdAndProductId || blockIds))
+        if (orgNameAndCountryHasValue && (versionIdAndProductIdHasValue || blockIds))
         {
-            yield return new ExternalSearchQuery(this, entityType, new Dictionary<string, string>() { { DnBConstants.KeyName.OrgNameKey, orgName }, { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode } });
+            yield return new ExternalSearchQuery(this, entityType,
+                new Dictionary<string, string>
+                {
+                    { DnBConstants.KeyName.OrgNameKey, orgName },
+                    { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode },
+                    { DnBConstants.KeyName.OrgStreetAddressLine1Key, orgStreetAddressLine1 },
+                    { DnBConstants.KeyName.OrgStreetAddressLine2Key, orgStreetAddressLine2 },
+                    { DnBConstants.KeyName.OrgPostalCodeKey, orgPostalCode },
+                    { DnBConstants.KeyName.OrgAddressLocalityKey, orgAddressLocality },
+                    { DnBConstants.KeyName.OrgAddressCountyKey, orgCounty },
+                    { DnBConstants.KeyName.OrgAddressRegionKey, orgRegion },
+                    { DnBConstants.KeyName.OrgTelephoneNumberKey, orgTelephoneNumber },
+                    { DnBConstants.KeyName.OrgUrlKey, orgUrl },
+                    { DnBConstants.KeyName.OrgEmailKey, orgEmail },
+                    { DnBConstants.KeyName.CustomerBillingEndorsementKey, jobData.CustomerBillingEndorsement },
+                    { DnBConstants.KeyName.CandidateMaximumQuantityKey, jobData.CandidateMaximumQuantity },
+                    { DnBConstants.KeyName.ConfidenceLowerLevelThresholdValueKey, jobData.ConfidenceLowerLevelThresholdValue },
+                    { DnBConstants.KeyName.ExclusionCriteriaKey, jobData.ExclusionCriteria },
+                    { DnBConstants.KeyName.IsCleanseAndStandardizeInformationRequiredKey, jobData.IsCleanseAndStandardizeInformationRequired.ToString() },
+                    { DnBConstants.KeyName.TradeUpKey, jobData.TradeUp },
+                    { DnBConstants.KeyName.OrderReasonKey, jobData.OrderReason },
+                    { DnBConstants.KeyName.CustomerReference1Key, jobData.CustomerReference1 },
+                    { DnBConstants.KeyName.CustomerReference2Key, jobData.CustomerReference2 },
+                    { DnBConstants.KeyName.CustomerReference3Key, jobData.CustomerReference3 },
+                    { DnBConstants.KeyName.CustomerReference4Key, jobData.CustomerReference4 },
+                    { DnBConstants.KeyName.CustomerReference5Key, jobData.CustomerReference5 }
+                });
         }
-
     }
 
     private static IEnumerable<IExternalSearchQueryResult> InternalExecuteSearch(ExecutionContext context, IExternalSearchQuery query, DnBExternalSearchJobData jobData)
@@ -153,10 +187,12 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             request = new RestRequest(requestResource, Method.GET);
             request.AddQueryParameter("name", orgName);
             request.AddQueryParameter("countryISOAlpha2Code", orgCountryCode);
+
+            AddExtendedMatchParameters(query, request);
         }
         else
         {
-            throw new Exception("Could not execute external search query - name and countryISOAlpha2Code must be specified.");
+            throw new Exception("Could not execute external search query - Name and Country Code (ISO Alpha-2 code) must be specified if DUNS is not provided.");
         }
 
         if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
@@ -209,6 +245,136 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         }
 
         throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
+    }
+
+    private static void AddExtendedMatchParameters(IExternalSearchQuery query, RestRequest request)
+    {
+        var orgStreetAddress1 = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgStreetAddressLine1Key)?.FirstOrDefault();
+        var orgStreetAddress2 = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgStreetAddressLine2Key)?.FirstOrDefault();
+        var orgPostalCode = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgPostalCodeKey)?.FirstOrDefault();
+        var orgAddressLocality = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgAddressLocalityKey)?.FirstOrDefault();
+        var orgAddressCounty = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgAddressCountyKey)?.FirstOrDefault();
+        var orgAddressRegion = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgAddressRegionKey)?.FirstOrDefault();
+        var orgTelephoneNumber = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgTelephoneNumberKey)?.FirstOrDefault();
+        var orgUrl = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgUrlKey)?.FirstOrDefault();
+        var orgEmail = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgEmailKey)?.FirstOrDefault();
+        var customerBillingEndorsement = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerBillingEndorsementKey)?.FirstOrDefault();
+        var candidateMaximumQuantity = query.QueryParameters.GetValue(DnBConstants.KeyName.CandidateMaximumQuantityKey)?.FirstOrDefault();
+        var confidenceLowerLevelThresholdValue = query.QueryParameters.GetValue(DnBConstants.KeyName.ConfidenceLowerLevelThresholdValueKey)?.FirstOrDefault();
+        var exclusionCriteria = query.QueryParameters.GetValue(DnBConstants.KeyName.ExclusionCriteriaKey)?.FirstOrDefault();
+        var isCleanseAndStandardizeInformationRequired = query.QueryParameters.GetValue(DnBConstants.KeyName.IsCleanseAndStandardizeInformationRequiredKey)?.FirstOrDefault();
+        var tradeUp = query.QueryParameters.GetValue(DnBConstants.KeyName.TradeUpKey)?.FirstOrDefault();
+        var orderReason = query.QueryParameters.GetValue(DnBConstants.KeyName.OrderReasonKey)?.FirstOrDefault();
+        var customerReference1 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference1Key)?.FirstOrDefault();
+        var customerReference2 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference2Key)?.FirstOrDefault();
+        var customerReference3 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference3Key)?.FirstOrDefault();
+        var customerReference4 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference4Key)?.FirstOrDefault();
+        var customerReference5 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference5Key)?.FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(orgStreetAddress1))
+        {
+            request.AddQueryParameter("streetAddressLine1", orgStreetAddress1);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgStreetAddress2))
+        {
+            request.AddQueryParameter("streetAddressLine2", orgStreetAddress2);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgPostalCode))
+        {
+            request.AddQueryParameter("postalCode", orgPostalCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgAddressLocality))
+        {
+            request.AddQueryParameter("addressLocality", orgAddressLocality);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgAddressCounty))
+        {
+            request.AddQueryParameter("addressCounty", orgAddressCounty);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgAddressRegion))
+        {
+            request.AddQueryParameter("addressRegion", orgAddressRegion);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgTelephoneNumber))
+        {
+            request.AddQueryParameter("telephoneNumber", orgTelephoneNumber);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgUrl))
+        {
+            request.AddQueryParameter("url", orgUrl);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orgEmail))
+        {
+            request.AddQueryParameter("email", orgEmail);
+        }
+
+        if (!string.IsNullOrWhiteSpace(customerBillingEndorsement))
+        {
+            request.AddQueryParameter("customerBillingEndorsement", customerBillingEndorsement);
+        }
+
+        if (!string.IsNullOrWhiteSpace(candidateMaximumQuantity))
+        {
+            request.AddQueryParameter("candidateMaximumQuantity", candidateMaximumQuantity);
+        }
+
+        if (!string.IsNullOrWhiteSpace(confidenceLowerLevelThresholdValue))
+        {
+            request.AddQueryParameter("confidenceLowerLevelThresholdValue", confidenceLowerLevelThresholdValue);
+        }
+
+        if (!string.IsNullOrWhiteSpace(exclusionCriteria))
+        {
+            request.AddQueryParameter("exclusionCriteria", exclusionCriteria);
+        }
+
+        if (!string.IsNullOrWhiteSpace(isCleanseAndStandardizeInformationRequired))
+        {
+            request.AddQueryParameter("isCleanseAndStandardizeInformationRequired", isCleanseAndStandardizeInformationRequired);
+        }
+
+        if (!string.IsNullOrWhiteSpace(tradeUp))
+        {
+            request.AddQueryParameter("tradeUp", tradeUp);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orderReason))
+        {
+            request.AddQueryParameter("orderReason", orderReason);
+        }
+
+        if (!string.IsNullOrWhiteSpace(customerReference1))
+        {
+            request.AddQueryParameter("customerReference1", customerReference1);
+        }
+
+        if (!string.IsNullOrWhiteSpace(customerReference2))
+        {
+            request.AddQueryParameter("customerReference2", customerReference2);
+        }
+
+        if (!string.IsNullOrWhiteSpace(customerReference3))
+        {
+            request.AddQueryParameter("customerReference3", customerReference3);
+        }
+
+        if (!string.IsNullOrWhiteSpace(customerReference4))
+        {
+            request.AddQueryParameter("customerReference4", customerReference4);
+        }
+
+        if (!string.IsNullOrWhiteSpace(customerReference5))
+        {
+            request.AddQueryParameter("customerReference5", customerReference5);
+        }
     }
 
     private static async Task<string> GetAuthToken(ExecutionContext context, DnBExternalSearchJobData jobData, Guid providerDefinitionId, bool bypassCache)

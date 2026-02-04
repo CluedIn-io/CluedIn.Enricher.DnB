@@ -483,7 +483,7 @@ public class Organization
     public IList<object> competitors { get; set; }
 }
 
-public class BlockStatu
+public class BlockStatus
 {
     public string blockID { get; set; }
     public string status { get; set; }
@@ -495,5 +495,5 @@ public class DunsDataResponse
     public TransactionDetail transactionDetail { get; set; }
     public InquiryDetail inquiryDetail { get; set; }
     public Organization organization { get; set; }
-    public IList<BlockStatu> blockStatus { get; set; }
+    public IList<BlockStatus> blockStatus { get; set; }
 }
