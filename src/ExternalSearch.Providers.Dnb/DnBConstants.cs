@@ -51,6 +51,15 @@ public static class DnBConstants
         public const string DunsNumberKey = "dunsNumberKey";
         public const string OrgNameKey = "orgNameKey";
         public const string OrgCountryCodeKey = "orgCountryCodeKey";
+        public const string OrgStreetAddressLine1Key = "orgStreetAddressLine1Key";
+        public const string OrgStreetAddressLine2Key = "orgStreetAddressLine2Key";
+        public const string OrgPostalCodeKey = "orgPostalCodeKey";
+        public const string OrgAddressLocalityKey = "orgAddressLocalityKey";
+        public const string OrgAddressCountyKey = "orgAddressCountyKey";
+        public const string OrgAddressRegionKey = "orgAddressRegionKey";
+        public const string OrgTelephoneNumberKey = "orgTelephoneNumberKey";
+        public const string OrgUrlKey = "orgUrlKey";
+        public const string OrgEmailKey = "orgEmailKey";
         public const string RegistrationNumbersKey = "registrationNumbersKey";
         public const string IndustryCodesKey = "industryCodesKey";
         public const string AuthUrl = "DNB_AUTH_URL";
@@ -62,6 +71,18 @@ public static class DnBConstants
         public const string VersionId = "versionId";
         public const string ProductId = "productId";
         public const string BlockIds = "blockIDs";
+        public const string CustomerBillingEndorsementKey = "customerBillingEndorsementKey";
+        public const string CandidateMaximumQuantityKey = "candidateMaximumQuantityKey";
+        public const string ConfidenceLowerLevelThresholdValueKey = "confidenceLowerLevelThresholdValueKey";
+        public const string ExclusionCriteriaKey = "exclusionCriteriaKey";
+        public const string IsCleanseAndStandardizeInformationRequiredKey = "isCleanseAndStandardizeInformationRequiredKey";
+        public const string TradeUpKey = "tradeUpKey";
+        public const string OrderReasonKey = "orderReasonKey";
+        public const string CustomerReference1Key = "customerReference1Key";
+        public const string CustomerReference2Key = "customerReference2Key";
+        public const string CustomerReference3Key = "customerReference3Key";
+        public const string CustomerReference4Key = "customerReference4Key";
+        public const string CustomerReference5Key = "customerReference5Key";
     }
 
     public struct ErrorMessages
@@ -95,6 +116,20 @@ public static class DnBConstants
         },
         new()
         {
+            DisplayName = "Organization Street Address Line 1 Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgStreetAddressLine1Key
+        },
+        new()
+        {
+            DisplayName = "Organization Street Address Line 2 Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgStreetAddressLine2Key
+        },
+        new()
+        {
             DisplayName = "Organization Country Code Vocabulary Key",
             Type = "vocabularyKeySelector",
             IsRequired = false,
@@ -102,11 +137,166 @@ public static class DnBConstants
         },
         new()
         {
+            DisplayName = "Organization Postal Code Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgPostalCodeKey
+        },
+        new()
+        {
+            DisplayName = "Organization Address Locality Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgAddressLocalityKey
+        },
+        new()
+        {
+            DisplayName = "Organization Address County Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgAddressCountyKey
+        },
+        new()
+        {
+            DisplayName = "Organization Address Region Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgAddressRegionKey
+        },
+        new()
+        {
+            DisplayName = "Organization Telephone Number Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgTelephoneNumberKey
+        },
+        new()
+        {
+            DisplayName = "Organization Url Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgUrlKey
+        },
+        new()
+        {
+            DisplayName = "Organization Email Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.OrgEmailKey
+        },
+        new()
+        {
+            DisplayName = "Customer Billing Endorsement",
+            Type = "input",
+            IsRequired = false,
+            Help = "A reference used during the billing process.",
+            Name = KeyName.CustomerBillingEndorsementKey
+        },
+        new()
+        {
+            DisplayName = "Candidate Maximum Quantity",
+            Type = "input",
+            IsRequired = false,
+            Name = KeyName.CandidateMaximumQuantityKey,
+            Help = "The maximum number of results to be returned. Default is 10.",
+            ValidationRules = new List<Dictionary<string, string>>
+            {
+                new() { { "regex", "[^0-9]" }, { "message", "Non-numeric values are not allowed." } },
+                new() { { "regex", "^(?:0|10[1-9]|1[1-9]\\d|[2-9]\\d{2,})$" }, { "message", "Valid values: 1 to 100" } }
+            }
+        },
+        new()
+        {
+            DisplayName = "Confidence Lower Level Threshold Value",
+            Type = "input",
+            IsRequired = false,
+            Name = KeyName.ConfidenceLowerLevelThresholdValueKey,
+            Help = "The lowest confidence level for entities returned in the response. Default is 4.",
+            ValidationRules = new List<Dictionary<string, string>>
+            {
+                new() { { "regex", "[^0-9]" }, { "message", "Non-numeric values are not allowed." } },
+                new() { { "regex", "^(?:0|1[1-9]|[2-9]\\d|\\d{3,})$" }, { "message", "Valid values: 1 to 10" } }
+            }
+        },
+        new()
+        {
+            DisplayName = "Exclusion Criteria",
+            Type = "input",
+            IsRequired = false,
+            Help = "Exclude entities based on several properties. (e.g., ExcludeNonHeadQuarters,ExcludeNonMarketable,ExcludeOutofBusiness,ExcludeUndeliverable,ExcludeUnreachable).",
+            Name = KeyName.ExclusionCriteriaKey
+        },
+        new()
+        {
+            DisplayName = "Is Cleanse and Standardize Information Required",
+            Type = "checkbox",
+            IsRequired = false,
+            Help = "Indicates if the cleanse and standardize information should be returned with the response.",
+            Name = KeyName.IsCleanseAndStandardizeInformationRequiredKey
+        },
+        new()
+        {
+            DisplayName = "Trade Up",
+            Type = "input",
+            IsRequired = false,
+            Help = "Indicates if the Headquarters D-U-N-S Number should be returned if a Branch is requested. (e.g., hq).",
+            Name = KeyName.TradeUpKey
+        },
+        new()
+        {
+            DisplayName = "Order Reason",
+            Type = "input",
+            IsRequired = false,
+            Help = "A code value that defines the grounds for the customer requesting the product.",
+            Name = KeyName.OrderReasonKey
+        },
+        new()
+        {
+            DisplayName = "Customer Reference 1",
+            Type = "input",
+            IsRequired = false,
+            Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
+            Name = KeyName.CustomerReference1Key
+        },
+        new()
+        {
+            DisplayName = "Customer Reference 2",
+            Type = "input",
+            IsRequired = false,
+            Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
+            Name = KeyName.CustomerReference2Key
+        },
+        new()
+        {
+            DisplayName = "Customer Reference 3",
+            Type = "input",
+            IsRequired = false,
+            Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
+            Name = KeyName.CustomerReference3Key
+        },
+        new()
+        {
+            DisplayName = "Customer Reference 4",
+            Type = "input",
+            IsRequired = false,
+            Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
+            Name = KeyName.CustomerReference4Key
+        },
+        new()
+        {
+            DisplayName = "Customer Reference 5",
+            Type = "input",
+            IsRequired = false,
+            Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
+            Name = KeyName.CustomerReference5Key
+        },
+        new()
+        {
             DisplayName = "Industry Code Types",
             Type = "input",
             IsRequired = false,
             Name = KeyName.IndustryCodesKey,
-            Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788)",
+            Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788).",
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
@@ -118,7 +308,7 @@ public static class DnBConstants
             Type = "input",
             IsRequired = false,
             Name = KeyName.RegistrationNumbersKey,
-            Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444)",
+            Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444).",
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
@@ -130,6 +320,7 @@ public static class DnBConstants
             DisplayName = $"Match and Append {KeyName.VersionId}",
             Type = "input",
             IsRequired = false,
+            Help = "The version of the product to be returned.",
             Name = KeyName.VersionId
         },
         new()
@@ -137,6 +328,7 @@ public static class DnBConstants
             DisplayName = $"Match and Append {KeyName.ProductId}",
             Type = "input",
             IsRequired = false,
+            Help = "The product ID provided by Dun & Bradstreet that identifies the product to be returned.",
             Name = KeyName.ProductId
         },
         new()
@@ -144,6 +336,7 @@ public static class DnBConstants
             DisplayName = $"Match and Append {KeyName.BlockIds}",
             Type = "input",
             IsRequired = false,
+            Help = "The block ID provided by Dun & Bradstreet that identifies the data block to be returned.",
             Name = KeyName.BlockIds
         }
     };
