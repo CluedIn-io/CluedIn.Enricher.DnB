@@ -124,33 +124,43 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         if (orgNameAndCountryHasValue && (versionIdAndProductIdHasValue || blockIds))
         {
-            yield return new ExternalSearchQuery(this, entityType,
-                new Dictionary<string, string>
+            var parameters = new Dictionary<string, string>
+            {
+                { DnBConstants.KeyName.OrgNameKey, orgName },
+                { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode }
+            };
+
+            void AddIfNotNullOrWhiteSpace(string key, string value)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
                 {
-                    { DnBConstants.KeyName.OrgNameKey, orgName },
-                    { DnBConstants.KeyName.OrgCountryCodeKey, orgCountryCode },
-                    { DnBConstants.KeyName.OrgStreetAddressLine1Key, orgStreetAddressLine1 },
-                    { DnBConstants.KeyName.OrgStreetAddressLine2Key, orgStreetAddressLine2 },
-                    { DnBConstants.KeyName.OrgPostalCodeKey, orgPostalCode },
-                    { DnBConstants.KeyName.OrgAddressLocalityKey, orgAddressLocality },
-                    { DnBConstants.KeyName.OrgAddressCountyKey, orgCounty },
-                    { DnBConstants.KeyName.OrgAddressRegionKey, orgRegion },
-                    { DnBConstants.KeyName.OrgTelephoneNumberKey, orgTelephoneNumber },
-                    { DnBConstants.KeyName.OrgUrlKey, orgUrl },
-                    { DnBConstants.KeyName.OrgEmailKey, orgEmail },
-                    { DnBConstants.KeyName.CustomerBillingEndorsementKey, jobData.CustomerBillingEndorsement },
-                    { DnBConstants.KeyName.CandidateMaximumQuantityKey, jobData.CandidateMaximumQuantity },
-                    { DnBConstants.KeyName.ConfidenceLowerLevelThresholdValueKey, jobData.ConfidenceLowerLevelThresholdValue },
-                    { DnBConstants.KeyName.ExclusionCriteriaKey, jobData.ExclusionCriteria },
-                    { DnBConstants.KeyName.IsCleanseAndStandardizeInformationRequiredKey, jobData.IsCleanseAndStandardizeInformationRequired.ToString() },
-                    { DnBConstants.KeyName.TradeUpKey, jobData.TradeUp },
-                    { DnBConstants.KeyName.OrderReasonKey, jobData.OrderReason },
-                    { DnBConstants.KeyName.CustomerReference1Key, jobData.CustomerReference1 },
-                    { DnBConstants.KeyName.CustomerReference2Key, jobData.CustomerReference2 },
-                    { DnBConstants.KeyName.CustomerReference3Key, jobData.CustomerReference3 },
-                    { DnBConstants.KeyName.CustomerReference4Key, jobData.CustomerReference4 },
-                    { DnBConstants.KeyName.CustomerReference5Key, jobData.CustomerReference5 }
-                });
+                    parameters[key] = value;
+                }
+            }
+
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgStreetAddressLine1Key, orgStreetAddressLine1);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgStreetAddressLine2Key, orgStreetAddressLine2);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgPostalCodeKey, orgPostalCode);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgAddressLocalityKey, orgAddressLocality);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgAddressCountyKey, orgCounty);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgAddressRegionKey, orgRegion);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgTelephoneNumberKey, orgTelephoneNumber);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgUrlKey, orgUrl);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgEmailKey, orgEmail);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CustomerBillingEndorsementKey, jobData.CustomerBillingEndorsement);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CandidateMaximumQuantityKey, jobData.CandidateMaximumQuantity);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.ConfidenceLowerLevelThresholdValueKey, jobData.ConfidenceLowerLevelThresholdValue);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.ExclusionCriteriaKey, jobData.ExclusionCriteria);
+            parameters[DnBConstants.KeyName.IsCleanseAndStandardizeInformationRequiredKey] = jobData.IsCleanseAndStandardizeInformationRequired.ToString();
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.TradeUpKey, jobData.TradeUp);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrderReasonKey, jobData.OrderReason);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CustomerReference1Key, jobData.CustomerReference1);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CustomerReference2Key, jobData.CustomerReference2);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CustomerReference3Key, jobData.CustomerReference3);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CustomerReference4Key, jobData.CustomerReference4);
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.CustomerReference5Key, jobData.CustomerReference5);
+
+            yield return new ExternalSearchQuery(this, entityType, parameters);
         }
     }
 

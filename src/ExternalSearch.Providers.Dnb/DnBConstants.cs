@@ -198,7 +198,7 @@ public static class DnBConstants
             Type = "input",
             IsRequired = false,
             Name = KeyName.CandidateMaximumQuantityKey,
-            Help = "The maximum number of results to be returned. Default is 10",
+            Help = "The maximum number of results to be returned. Default is 10.",
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9]" }, { "message", "Non-numeric values are not allowed." } },
@@ -211,11 +211,11 @@ public static class DnBConstants
             Type = "input",
             IsRequired = false,
             Name = KeyName.ConfidenceLowerLevelThresholdValueKey,
-            Help = "The lowest confidence level for entities returned in the response. Default is 4",
+            Help = "The lowest confidence level for entities returned in the response. Default is 4.",
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9]" }, { "message", "Non-numeric values are not allowed." } },
-                new() { { "regex", "^(?:0|1[1-9]|\\d{2,})$" }, { "message", "Valid values: 1 to 10" } }
+                new() { { "regex", "^(?:0|1[1-9]|[2-9]\\d|\\d{3,})$" }, { "message", "Valid values: 1 to 10" } }
             }
         },
         new()
@@ -223,7 +223,7 @@ public static class DnBConstants
             DisplayName = "Exclusion Criteria",
             Type = "input",
             IsRequired = false,
-            Help = "Exclude entities based on several properties. (e.g., ExcludeNonHeadQuarters,ExcludeNonMarketable,ExcludeOutofBusiness,ExcludeUndeliverable,ExcludeUnreachable)",
+            Help = "Exclude entities based on several properties. (e.g., ExcludeNonHeadQuarters,ExcludeNonMarketable,ExcludeOutofBusiness,ExcludeUndeliverable,ExcludeUnreachable).",
             Name = KeyName.ExclusionCriteriaKey
         },
         new()
@@ -239,7 +239,7 @@ public static class DnBConstants
             DisplayName = "Trade Up",
             Type = "input",
             IsRequired = false,
-            Help = "Indicates if the Headquarters D-U-N-S Number should be returned if a Branch is requested. (e.g., hq)",
+            Help = "Indicates if the Headquarters D-U-N-S Number should be returned if a Branch is requested. (e.g., hq).",
             Name = KeyName.TradeUpKey
         },
         new()
@@ -296,7 +296,7 @@ public static class DnBConstants
             Type = "input",
             IsRequired = false,
             Name = KeyName.IndustryCodesKey,
-            Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788)",
+            Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788).",
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
@@ -308,7 +308,7 @@ public static class DnBConstants
             Type = "input",
             IsRequired = false,
             Name = KeyName.RegistrationNumbersKey,
-            Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444)",
+            Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444).",
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
