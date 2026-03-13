@@ -48,6 +48,7 @@ public static class DnBConstants
     {
         public const string ApiToken = "apiToken";
         public const string AcceptedEntityType = "acceptedEntityType";
+        public const string PropertyMappings = "propertyMappings";
         public const string DunsNumberKey = "dunsNumberKey";
         public const string OrgNameKey = "orgNameKey";
         public const string OrgCountryCodeKey = "orgCountryCodeKey";
@@ -393,7 +394,20 @@ public static class DnBConstants
                 DisplayName = $"Accepted {EntityTypeLabel}",
                 Type = "entityTypeSelector",
                 IsRequired = false,
-                Name = KeyName.AcceptedEntityType
+                Name = KeyName.AcceptedEntityType,
+                Help = $"The {EntityTypeLabel.ToLower()} that defines the golden records you want to enrich (e.g., /Organization)."
+            },
+            new()
+            {
+                DisplayName = "Property Mappings",
+                Type = "multiline",
+                IsRequired = false,
+                Name = KeyName.PropertyMappings,
+                Help = "Define how properties map to values in the JSON payload. Enter each mapping on a new line using the format: Property=JSONPath. (e.g., Email=$.organization.email).",
+                ValidationRules = new List<Dictionary<string, string>>
+                {
+                    new() { { "regex", @"(^|[\r\n])(=|[^=\r\n]+$|[^=\r\n]+=\r?$)" }, { "message", "Invalid format. Each line must be in key=value format." } }
+                }
             }
         }.Concat(Properties)
     };

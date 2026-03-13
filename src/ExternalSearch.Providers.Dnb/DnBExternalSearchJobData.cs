@@ -8,6 +8,7 @@ public class DnBExternalSearchJobData : CrawlJobData
     public DnBExternalSearchJobData(IDictionary<string, object> configuration)
     {
         AcceptedEntityType = GetValue<string>(configuration, DnBConstants.KeyName.AcceptedEntityType);
+        PropertyMappings = GetValue<string>(configuration, DnBConstants.KeyName.PropertyMappings);
         OrgNameKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgNameKey);
         DunsNumberKey = GetValue<string>(configuration, DnBConstants.KeyName.DunsNumberKey);
         OrgCountryCodeKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgCountryCodeKey);
@@ -53,6 +54,7 @@ public class DnBExternalSearchJobData : CrawlJobData
         return new Dictionary<string, object>
         {
             { DnBConstants.KeyName.AcceptedEntityType, AcceptedEntityType },
+            { DnBConstants.KeyName.PropertyMappings, PropertyMappings},
             { DnBConstants.KeyName.OrgNameKey, OrgNameKey },
             { DnBConstants.KeyName.DunsNumberKey, DunsNumberKey },
             { DnBConstants.KeyName.OrgCountryCodeKey, OrgCountryCodeKey },
@@ -94,6 +96,7 @@ public class DnBExternalSearchJobData : CrawlJobData
     }
 
     public string AcceptedEntityType { get; set; }
+    public string PropertyMappings { get; set; }
     public string OrgNameKey { get; set; }
     public string DunsNumberKey { get; set; }
     public string OrgCountryCodeKey { get; set; }
