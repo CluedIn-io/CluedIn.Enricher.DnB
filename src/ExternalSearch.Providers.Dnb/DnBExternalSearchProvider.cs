@@ -482,7 +482,13 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         metadata.OriginEntityCode = code;
         metadata.Codes.Add(request.EntityMetaData.OriginEntityCode);
 
-        var dnbResult = resultItem.Data?.ToObject<DNBResponse>();
+        var serializer = JsonSerializer.Create(new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore
+        });
+
+        var dnbResult = resultItem.Data?.ToObject<DNBResponse>(serializer);
+
         PopulatePrimaryAddresses(metadata, dnbResult);
 
         PopulateOrganizationInfo(metadata, dnbResult, jobData);
