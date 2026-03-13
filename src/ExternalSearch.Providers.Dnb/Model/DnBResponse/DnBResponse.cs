@@ -24,7 +24,6 @@ public class AddressCounty
 public class AddressLocality
 {
     public string name { get; set; }
-
 }
 
 public class AddressRegion

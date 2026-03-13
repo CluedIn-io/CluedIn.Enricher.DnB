@@ -406,7 +406,7 @@ public static class DnBConstants
                 Help = "Define how properties map to values in the JSON payload. Enter each mapping on a new line using the format: Property=JSONPath. (e.g., Email=$.organization.email).",
                 ValidationRules = new List<Dictionary<string, string>>
                 {
-                    new() { { "regex", @"(^|[\r\n])(=|[^=\r\n]+$|[^=\r\n]+=\r?$)" }, { "message", "Invalid format. Each line must be in key=value format." } }
+                    new() { { "regex", @"(^|[\r\n])(=|[^=\r\n]+$|[^=\r\n]+=\r?$)" }, { "message", "Invalid format. Each line must be in Property=JSONPath format." } }
                 }
             }
         }.Concat(Properties)
