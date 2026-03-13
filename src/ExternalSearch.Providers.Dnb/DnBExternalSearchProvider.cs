@@ -12,18 +12,17 @@ using CluedIn.ExternalSearch.Providers.DnB.Custom;
 using CluedIn.ExternalSearch.Providers.DnB.Model.AuthResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Model.DnBResponse;
 using CluedIn.ExternalSearch.Providers.DnB.Vocabularies;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using EntityType = CluedIn.Core.Data.EntityType;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
@@ -453,7 +452,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     {
         var metadata = new EntityMetadataPart();
 
-        this.PopulateMetadata(context,metadata, resultItem, request, jobData);
+        this.PopulateMetadata(context, metadata, resultItem, request, jobData);
 
         return metadata;
     }
