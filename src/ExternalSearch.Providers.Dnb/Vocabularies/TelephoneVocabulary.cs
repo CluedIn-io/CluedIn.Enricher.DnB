@@ -7,7 +7,7 @@ public class TelephoneVocabulary : SimpleVocabulary
     public TelephoneVocabulary()
     {
         VocabularyName = "DNBTelephone";
-        KeyPrefix = "dnb.telephone";
+        KeyPrefix = "DnB.telephone";
         KeySeparator = ".";
         Grouping = "/Telephone";
     }

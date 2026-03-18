@@ -7,7 +7,7 @@ public class FaxVocabulary : SimpleVocabulary
     public FaxVocabulary()
     {
         VocabularyName = "DNBFax";
-        KeyPrefix = "dnb.fax";
+        KeyPrefix = "DnB.fax";
         KeySeparator = ".";
         Grouping = "/Fax";
     }

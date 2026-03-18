@@ -7,7 +7,7 @@ public class RegistrationNumbersVocabulary : SimpleVocabulary
     public RegistrationNumbersVocabulary()
     {
         VocabularyName = "DNBRegistrationNumbers";
-        KeyPrefix = "dnb.registrationNumbers";
+        KeyPrefix = "DnB.registrationNumbers";
         KeySeparator = ".";
         Grouping = "/RegistrationNumbers";
     }

@@ -7,7 +7,7 @@ public class TradeStyleNamesVocabulary : SimpleVocabulary
     public TradeStyleNamesVocabulary()
     {
         VocabularyName = "DNBTradeStyleNames";
-        KeyPrefix = "dnb.tradeStyleNames";
+        KeyPrefix = "DnB.tradeStyleNames";
         KeySeparator = ".";
         Grouping = "/TradeStyleNames";
     }
