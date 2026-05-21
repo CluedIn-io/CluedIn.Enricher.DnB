@@ -476,7 +476,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     private void PopulateMetadata(ExecutionContext context, IEntityMetadata metadata, IExternalSearchQueryResult<JObject> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
     {
-        var code = this.GetOriginEntityCode(resultItem, request, request.Queries.FirstOrDefault());
+        var query = request.Queries.FirstOrDefault(x => x.Id == resultItem.QueryId) ?? request.Queries.FirstOrDefault();
+        var code = this.GetOriginEntityCode(resultItem, request, query);
         metadata.EntityType = request.EntityMetaData.EntityType;
         //TODO: add Name
         metadata.Name = request.EntityMetaData.Name;
