@@ -44,6 +44,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     public IEnumerable<Control> Properties { get; } = new List<Control>();
     public Guide Guide => null;
     public IntegrationType Type => IntegrationType.Enrichment;
+    public override Version Version => new Version("4.6.2.0"); // Update version to expire cached results when we make changes like changing the result type
 
     private static readonly EntityType[] DefaultAcceptedEntityTypes = { EntityType.Organization };
     private static readonly SemaphoreSlim semaphore = new(1, 1);
@@ -475,7 +476,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     private void PopulateMetadata(ExecutionContext context, IEntityMetadata metadata, IExternalSearchQueryResult<JObject> resultItem, IExternalSearchRequest request, DnBExternalSearchJobData jobData)
     {
-        var code = this.GetOriginEntityCode(resultItem, request, request.Queries.FirstOrDefault());
+        var query = request.Queries.FirstOrDefault(x => x.Id == resultItem.QueryId) ?? request.Queries.FirstOrDefault();
+        var code = this.GetOriginEntityCode(resultItem, request, query);
         metadata.EntityType = request.EntityMetaData.EntityType;
         //TODO: add Name
         metadata.Name = request.EntityMetaData.Name;

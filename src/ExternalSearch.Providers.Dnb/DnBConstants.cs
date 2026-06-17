@@ -204,6 +204,10 @@ public static class DnBConstants
             {
                 new() { { "regex", "[^0-9]" }, { "message", "Non-numeric values are not allowed." } },
                 new() { { "regex", "^(?:0|10[1-9]|1[1-9]\\d|[2-9]\\d{2,})$" }, { "message", "Valid values: 1 to 100" } }
+            },
+            Options = new Dictionary<string, object>
+            {
+                { "defaultValue", 10 }
             }
         },
         new()
@@ -217,6 +221,10 @@ public static class DnBConstants
             {
                 new() { { "regex", "[^0-9]" }, { "message", "Non-numeric values are not allowed." } },
                 new() { { "regex", "^(?:0|1[1-9]|[2-9]\\d|\\d{3,})$" }, { "message", "Valid values: 1 to 10" } }
+            },
+            Options = new Dictionary<string, object>
+            {
+                { "defaultValue", 4 }
             }
         },
         new()
@@ -301,6 +309,10 @@ public static class DnBConstants
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+            },
+            Options = new Dictionary<string, object>
+            {
+                { "defaultValue", string.Empty }
             }
         },
         new()
@@ -313,6 +325,10 @@ public static class DnBConstants
             ValidationRules = new List<Dictionary<string, string>>
             {
                 new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+            },
+            Options = new Dictionary<string, object>
+            {
+                { "defaultValue", string.Empty }
             }
         },
         // Match and Append 
@@ -407,6 +423,10 @@ public static class DnBConstants
                 ValidationRules = new List<Dictionary<string, string>>
                 {
                     new() { { "regex", @"(^|[\r\n])(=|[^=\r\n]+$|[^=\r\n]+=\r?$)" }, { "message", "Invalid format. Each line must be in Property=JSONPath format." } }
+                },
+                Options = new Dictionary<string, object>
+                {
+                    { "defaultValue", string.Empty }
                 }
             }
         }.Concat(Properties)
