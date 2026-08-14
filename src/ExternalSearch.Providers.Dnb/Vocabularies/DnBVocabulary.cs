@@ -96,6 +96,9 @@ public class DnBVocabulary : SimpleVocabulary
             YearlyRevenue = group.Add(new VocabularyKey(nameof(YearlyRevenue), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             GlobalUltimateYearlyRevenue = group.Add(new VocabularyKey(nameof(GlobalUltimateYearlyRevenue), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
             DomesticUltimateYearlyRevenue = group.Add(new VocabularyKey(nameof(DomesticUltimateYearlyRevenue), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            LastApiCallTimestamp = group.Add(new VocabularyKey(nameof(LastApiCallTimestamp), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            LastApiCallErrorMessage = group.Add(new VocabularyKey(nameof(LastApiCallErrorMessage), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
+            LastApiCallStatusCode = group.Add(new VocabularyKey(nameof(LastApiCallStatusCode), VocabularyKeyDataType.Text, VocabularyKeyVisibility.Visible));
         });
     }
 
@@ -182,4 +185,7 @@ public class DnBVocabulary : SimpleVocabulary
     public VocabularyKey YearlyRevenue { get; protected set; }
     public VocabularyKey GlobalUltimateYearlyRevenue { get; protected set; }
     public VocabularyKey DomesticUltimateYearlyRevenue { get; protected set; }
+    public VocabularyKey LastApiCallTimestamp { get; protected set; }
+    public VocabularyKey LastApiCallErrorMessage { get; protected set; }
+    public VocabularyKey LastApiCallStatusCode { get; protected set; }
 }

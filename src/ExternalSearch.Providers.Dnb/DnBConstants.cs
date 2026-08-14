@@ -1,8 +1,9 @@
-﻿using System;
+﻿using CluedIn.Core.Data.Relational;
+using CluedIn.Core.Providers;
+using CluedIn.ExternalSearch.Providers.DnB.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using CluedIn.Core.Data.Relational;
-using CluedIn.Core.Providers;
 
 namespace CluedIn.ExternalSearch.Providers.DnB;
 
@@ -48,9 +49,13 @@ public static class DnBConstants
     {
         public const string ApiToken = "apiToken";
         public const string AcceptedEntityType = "acceptedEntityType";
+        public const string IdentityResolutionApi = "identityResolutionApi";
+        public const string GetDataUsingMatchesDuns = "getDataUsingMatchesDuns";
+        public const string IncludeLastApiCallDetails = "includeLastApiCallDetails";
         public const string PropertyMappings = "propertyMappings";
         public const string DunsNumberKey = "dunsNumberKey";
         public const string OrgNameKey = "orgNameKey";
+        public const string RegistrationNumberKey = "registrationNumberKey";
         public const string OrgCountryCodeKey = "orgCountryCodeKey";
         public const string OrgStreetAddressLine1Key = "orgStreetAddressLine1Key";
         public const string OrgStreetAddressLine2Key = "orgStreetAddressLine2Key";
@@ -98,6 +103,31 @@ public static class DnBConstants
     public static string EntityTypeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Type" : "Business Domain";
     public static string EntityCodeLabel => CluedInVersion < new Version(4, 5, 0) ? "Entity Code" : "Entity Identifier";
 
+    private static Dictionary<string, IdentityResolutionAPI> CreateSupportedIdentityResolutionAPIs()
+    {
+        var supportedIdentityResolutionAPIs = new Dictionary<string, IdentityResolutionAPI>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["CleanseMatch"] = new()
+            {
+                Label = "Cleanse Match",
+                Description = "Returns multiple results based on the request parameters using the /match/extendedMatch endpoint"
+            },
+            ["ExtendedMatch"] = new()
+            {
+                Label = "Extended Match",
+                Description = "Returns the best match along with the requested data product response using the /match/extendedMatch endpoint"
+            }
+        };
+
+        foreach (var api in supportedIdentityResolutionAPIs)
+        {
+            api.Value.Value = api.Key;
+        }
+
+        return supportedIdentityResolutionAPIs;
+    }
+
+    public static readonly Dictionary<string, IdentityResolutionAPI> SupportedIdentityResolutionAPIs = CreateSupportedIdentityResolutionAPIs();
 
     public static IEnumerable<Control> Properties { get; set; } = new List<Control>
     {
@@ -114,6 +144,13 @@ public static class DnBConstants
             Type = "vocabularyKeySelector",
             IsRequired = false,
             Name = KeyName.OrgNameKey
+        },
+        new()
+        {
+            DisplayName = "Registration Number Vocabulary Key",
+            Type = "vocabularyKeySelector",
+            IsRequired = false,
+            Name = KeyName.RegistrationNumberKey
         },
         new()
         {
@@ -412,6 +449,37 @@ public static class DnBConstants
                 IsRequired = false,
                 Name = KeyName.AcceptedEntityType,
                 Help = $"The {EntityTypeLabel.ToLower()} that defines the golden records you want to enrich (e.g., /Organization)."
+            },
+            new()
+            {
+                DisplayName = "Identity Resolution API",
+                Type = "option",
+                IsRequired = true,
+                Name = KeyName.IdentityResolutionApi,
+                Help = "The Identity Resolution (IDR) API will be used to retrieve matches.",
+                SourceType = ControlSourceType.Dynamic,
+                Source = DnBExtendedConfigurationProvider.SourceName,
+                Options = new Dictionary<string, object>
+                {
+                    // ReSharper disable once StringLiteralTypo
+                    { "defaultValue", "extendedmatch" }
+                }
+            },
+            new()
+            {
+                DisplayName = "Get Data using Matches DUNS",
+                Type = "checkbox",
+                IsRequired = false,
+                Name = KeyName.GetDataUsingMatchesDuns,
+                Help = "When enabled, the matches DUNS will be used to retrieve data.",
+            },
+            new()
+            {
+                DisplayName = "Include Last API Call Details",
+                Type = "checkbox",
+                IsRequired = false,
+                Name = KeyName.IncludeLastApiCallDetails,
+                Help = "When enabled, the last API call details (timestamp, status and error) will be included.",
             },
             new()
             {
