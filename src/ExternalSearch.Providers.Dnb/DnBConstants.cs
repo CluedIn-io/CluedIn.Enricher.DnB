@@ -110,7 +110,7 @@ public static class DnBConstants
             ["CleanseMatch"] = new()
             {
                 Label = "Cleanse Match",
-                Description = "Returns multiple results based on the request parameters using the /match/extendedMatch endpoint"
+                Description = "Returns multiple results based on the request parameters using the /match/cleanseMatch endpoint"
             },
             ["ExtendedMatch"] = new()
             {
@@ -467,7 +467,7 @@ public static class DnBConstants
             },
             new()
             {
-                DisplayName = "Get Data using Matches DUNS",
+                DisplayName = "Get Data Using Matches DUNS",
                 Type = "checkbox",
                 IsRequired = false,
                 Name = KeyName.GetDataUsingMatchesDuns,

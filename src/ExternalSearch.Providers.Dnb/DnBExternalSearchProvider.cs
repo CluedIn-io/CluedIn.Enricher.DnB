@@ -328,6 +328,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                     {
                         AddLastApiCallDetails(data, lastApiCallStatusCode, lastApiCallErrorMessage, lastApiCallTimeStamp);
                     }
+                    else
+                    {
+                        // No DUNS calls were made or all returned null; fall back to match API call details
+                        AddLastApiCallDetails(data, cleanseResponse.StatusCode.ToString(), cleanseResponseError ?? cleanseResponse.StatusDescription, cleanseTimestamp);
+                    }
                 }
                 else
                 {
@@ -339,6 +344,10 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                         var dunsResult = ExecuteDunsRequest(client, matchDuns, jobData, token);
                         data = dunsResult.Data;
                         AddLastApiCallDetails(data, dunsResult.StatusCode, dunsResult.ErrorMessage, dunsResult.Timestamp);
+                    }
+                    else
+                    {
+                        AddLastApiCallDetails(data, cleanseResponse.StatusCode.ToString(), cleanseResponseError ?? cleanseResponse.StatusDescription, cleanseTimestamp);
                     }
                 }
             }
