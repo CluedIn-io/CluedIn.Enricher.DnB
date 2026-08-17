@@ -110,6 +110,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         }
 
         var orgName = GetValue(request, config, DnBConstants.KeyName.OrgNameKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.OrganizationName)?.FirstOrDefault();
+        var registrationNumber = GetValue(request, config, DnBConstants.KeyName.RegistrationNumberKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.TaxId)?.FirstOrDefault();
         var orgCountryCode = GetValue(request, config, DnBConstants.KeyName.OrgCountryCodeKey, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressCountryCode)?.FirstOrDefault();
         var orgStreetAddressLine1 = GetValue(request, config, DnBConstants.KeyName.OrgStreetAddressLine1Key, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressStreetName)?.FirstOrDefault();
         var orgStreetAddressLine2 = GetValue(request, config, DnBConstants.KeyName.OrgStreetAddressLine2Key, Core.Data.Vocabularies.Vocabularies.CluedInOrganization.AddressStreetName)?.FirstOrDefault();
@@ -141,6 +142,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                 }
             }
 
+            AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.RegistrationNumberKey, registrationNumber);
             AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgStreetAddressLine1Key, orgStreetAddressLine1);
             AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgStreetAddressLine2Key, orgStreetAddressLine2);
             AddIfNotNullOrWhiteSpace(DnBConstants.KeyName.OrgPostalCodeKey, orgPostalCode);
@@ -185,18 +187,56 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         var dunsNumber = query.QueryParameters.GetValue("id")?.FirstOrDefault();
         var orgName = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgNameKey)?.FirstOrDefault();
         var orgCountryCode = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgCountryCodeKey)?.FirstOrDefault();
+        var includeLastApiCallDetails = jobData.IncludeLastApiCallDetails;
+        var identityResolutionApi = jobData.IdentityResolutionApi;
+        var getDataUsingMatchesDuns = jobData.GetDataUsingMatchesDuns;
+        var isCleanseApi = string.Equals(identityResolutionApi, "CleanseMatch", StringComparison.OrdinalIgnoreCase);
 
         var client = new RestClient(jobData.DnBBaseUrl);
 
         RestRequest request;
+
+        // If DUNS is provided, then we can directly retrieve the organization data using the DUNS number.
         if (!string.IsNullOrEmpty(dunsNumber))
         {
-            var requestResource = $"data/duns/{dunsNumber}";
-            request = new RestRequest(requestResource, Method.GET);
+            var (dunsData, statusCode, errorMessage, timestamp) = ExecuteDunsRequest(client, dunsNumber, jobData, token);
+
+            if (dunsData == null)
+            {
+                if (!includeLastApiCallDetails)
+                {
+                    throw new ApplicationException(
+                        $"Could not execute external search query - DnB returned error: {errorMessage}");
+                }
+
+                yield return new ExternalSearchQueryResult<JObject>(query, CreateLastApiCallErrorData(statusCode, errorMessage, timestamp));
+                yield break;
+
+            }
+
+            AddLastApiCallDetails(dunsData, statusCode, errorMessage, timestamp);
+
+            var organization = dunsData.SelectToken("organization");
+
+            if (organization == null)
+            {
+                if (!includeLastApiCallDetails)
+                {
+                    throw new ApplicationException(
+                        "Could not execute external search query - DnB returned empty organization");
+                }
+            }
+
+            yield return new ExternalSearchQueryResult<JObject>(query, dunsData);
+            yield break;
         }
-        else if (!string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode))
+
+        // If DUNS is not provided, then Name and Country Code (ISO Alpha-2 code) must be specified for identity resolution.
+        if (!string.IsNullOrWhiteSpace(orgName) && !string.IsNullOrWhiteSpace(orgCountryCode))
         {
-            const string requestResource = "match/extendedMatch";
+            var requestResource = isCleanseApi
+                ? "match/cleanseMatch"
+                : "match/extendedMatch";
             request = new RestRequest(requestResource, Method.GET);
             request.AddQueryParameter("name", orgName);
             request.AddQueryParameter("countryISOAlpha2Code", orgCountryCode);
@@ -225,25 +265,131 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         request.AddHeader("Authorization", $"Bearer {token}");
 
         var cleanseResponse = client.ExecuteAsync(request).GetAwaiter().GetResult();
+        var cleanseTimestamp = DateTimeOffset.UtcNow;
+        var data = JsonUtility.Deserialize<JObject>(cleanseResponse.Content, new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore });
+
+        if (data == null)
+        {
+            throw new ApplicationException("Could not execute external search query - DnB returned empty response content");
+        }
+
+        var cleanseResponseError = data.SelectToken("error.errorMessage")?.ToString();
 
         if (cleanseResponse.StatusCode == HttpStatusCode.OK)
         {
-            var data = JsonUtility.Deserialize<JObject>(cleanseResponse.Content, new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore });
+            var candidatesMatchedQuantity = data.SelectToken("candidatesMatchedQuantity")?.ToObject<long?>();
 
-            if (data == null)
+            // If DUNS is not provided and the user has requested to get data using the matched DUNS
+            // Then we need to find the DUNS number from the match candidates and retrieve the organization data using that DUNS number.
+            if (getDataUsingMatchesDuns)
             {
-                throw new ApplicationException("Could not execute external search query - DnB returned empty data");
+                var lastApiCallStatusCode = string.Empty;
+                var lastApiCallErrorMessage = string.Empty;
+                var lastApiCallTimeStamp = DateTimeOffset.MinValue;
+
+                // CleanseMatch API returns a list of match candidates,
+                // So we need to iterate through the candidates and find the first one with a valid DUNS number (with response).
+                if (isCleanseApi)
+                {
+                    var matchCandidates = data.SelectTokens("matchCandidates[*]").ToList();
+
+                    foreach (var candidate in matchCandidates)
+                    {
+                        var duns = candidate.SelectToken("organization.duns")?.ToString();
+                        if (string.IsNullOrEmpty(duns))
+                        {
+                            continue;
+                        }
+
+                        var dunsResult = TryExecuteDunsRequest(client, duns, jobData, token);
+                        if (dunsResult == null) continue;
+
+                        // Track error details from failed candidates
+                        if (dunsResult.Value.Data == null)
+                        {
+                            lastApiCallStatusCode = dunsResult.Value.StatusCode;
+                            lastApiCallErrorMessage = dunsResult.Value.ErrorMessage;
+                            lastApiCallTimeStamp = dunsResult.Value.Timestamp;
+                            continue;
+                        }
+
+                        var matchConfidenceCode = candidate.SelectToken("matchQualityInformation.confidenceCode")?.ToString();
+                        data = dunsResult.Value.Data;
+                        data.TryAdd("candidatesMatchedQuantity", candidatesMatchedQuantity);
+                        data.TryAdd("matchConfidenceCode", matchConfidenceCode);
+                        AddLastApiCallDetails(data, dunsResult.Value.StatusCode, dunsResult.Value.ErrorMessage, dunsResult.Value.Timestamp);
+
+                        break;
+                    }
+
+                    // If all candidates failed, add the last error details to data
+                    // TryAdd will not overwrite existing keys, so the last successful candidate's details will be preserved if any candidate succeeded
+                    if (!string.IsNullOrEmpty(lastApiCallStatusCode))
+                    {
+                        AddLastApiCallDetails(data, lastApiCallStatusCode, lastApiCallErrorMessage, lastApiCallTimeStamp);
+                    }
+                    else
+                    {
+                        // No DUNS calls were made or all returned null; fall back to match API call details
+                        AddLastApiCallDetails(data, cleanseResponse.StatusCode.ToString(), cleanseResponseError ?? cleanseResponse.StatusDescription, cleanseTimestamp);
+                    }
+                }
+                else
+                {
+                    // ExtendedMatch API returns a single match candidate, so we can directly retrieve the DUNS number from the response.
+                    var matchDuns = data.SelectToken("embeddedProduct.organization.duns")?.ToString();
+
+                    if (!string.IsNullOrEmpty(matchDuns))
+                    {
+                        var dunsResult = ExecuteDunsRequest(client, matchDuns, jobData, token);
+                        data = dunsResult.Data;
+                        AddLastApiCallDetails(data, dunsResult.StatusCode, dunsResult.ErrorMessage, dunsResult.Timestamp);
+                    }
+                    else
+                    {
+                        AddLastApiCallDetails(data, cleanseResponse.StatusCode.ToString(), cleanseResponseError ?? cleanseResponse.StatusDescription, cleanseTimestamp);
+                    }
+                }
+            }
+            else
+            {
+                // If user has not requested to get data using the matched DUNS, then we just return the response from the match API.
+                AddLastApiCallDetails(data, cleanseResponse.StatusCode.ToString(), cleanseResponseError ?? cleanseResponse.StatusDescription, cleanseTimestamp);
             }
 
             var organization = data.SelectToken("organization") ?? data.SelectToken("embeddedProduct.organization");
 
+            if (isCleanseApi && organization == null)
+            {
+                var organizations = data.SelectTokens("matchCandidates[*].organization")?.ToList();
+
+                foreach (var cleanseOrg in organizations.TakeWhile(cleanseOrg => cleanseOrg != null))
+                {
+                    var cleanseApiData = (JObject)data.DeepClone();
+                    cleanseApiData.Remove("organization");
+                    cleanseApiData["organization"] = cleanseOrg;
+
+                    yield return new ExternalSearchQueryResult<JObject>(query, cleanseApiData);
+                }
+
+                yield break;
+            }
+
             if (organization == null)
             {
-                throw new ApplicationException("Could not execute external search query - DnB returned empty organization");
+                if (!includeLastApiCallDetails)
+                {
+                    throw new ApplicationException(
+                        "Could not execute external search query - DnB returned empty organization");
+                }
+
+                yield return new ExternalSearchQueryResult<JObject>(query, data);
+                yield break;
             }
 
             data.Remove("organization");
             data.TryAdd("organization", organization);
+
             yield return new ExternalSearchQueryResult<JObject>(query, data);
             yield break;
         }
@@ -251,6 +397,16 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         if (cleanseResponse.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new BadTokenException("Access token expired");
+        }
+
+        // If includeLastApiCallDetails is true, we return the error details in the result instead of throwing an exception
+        if (includeLastApiCallDetails)
+        {
+            yield return new ExternalSearchQueryResult<JObject>(query, CreateLastApiCallErrorData(
+                cleanseResponse.StatusCode.ToString(),
+                cleanseResponseError ?? cleanseResponse.ErrorException?.Message ?? cleanseResponse.StatusDescription,
+                cleanseTimestamp));
+            yield break;
         }
 
         if (cleanseResponse.ErrorException != null)
@@ -261,8 +417,89 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         throw new ApplicationException("Could not execute external search query - StatusCode:" + cleanseResponse.StatusCode + "; Content: " + cleanseResponse.Content);
     }
 
+    private static void AddLastApiCallDetails(JObject data, string statusCode, string errorMessage, DateTimeOffset timestamp)
+    {
+        data.TryAdd("lastApiCallStatusCode", statusCode);
+        data.TryAdd("lastApiCallErrorMessage", errorMessage);
+        data.TryAdd("lastApiCallTimestamp", timestamp.ToString("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    private static JObject CreateLastApiCallErrorData(string statusCode, string errorMessage, DateTimeOffset timestamp)
+    {
+        return new JObject
+        {
+            ["lastApiCallStatusCode"] = statusCode,
+            ["lastApiCallErrorMessage"] = errorMessage,
+            ["lastApiCallTimestamp"] = timestamp.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+    }
+
+    private static (JObject Data, string StatusCode, string ErrorMessage, DateTimeOffset Timestamp) ExecuteDunsRequest(RestClient client, string dunsNumber, DnBExternalSearchJobData jobData, string token)
+    {
+        var requestResource = $"data/duns/{dunsNumber}";
+        var request = new RestRequest(requestResource, Method.GET);
+
+        if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
+        {
+            request.AddQueryParameter("versionId", jobData.VersionId);
+            request.AddQueryParameter("productId", jobData.ProductId);
+        }
+        else if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
+        {
+            request.AddQueryParameter("blockIDs", jobData.BlockIds);
+        }
+
+        request.AddHeader("Authorization", $"Bearer {token}");
+
+        var response = client.ExecuteAsync(request).GetAwaiter().GetResult();
+        var timestamp = DateTimeOffset.UtcNow;
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new BadTokenException("Access token expired");
+        }
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            var errorMessage = response.StatusDescription;
+
+            try
+            {
+                var errorBody = JObject.Parse(response.Content);
+                errorMessage = errorBody.SelectToken("error.errorMessage")?.ToString() ?? errorMessage;
+            }
+            catch
+            {
+                return (null, response.StatusCode.ToString(), errorMessage, timestamp);
+            }
+
+            return (null, response.StatusCode.ToString(), errorMessage, timestamp);
+        }
+
+        var data = JsonUtility.Deserialize<JObject>(response.Content, new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore });
+
+        return data == null ? throw new ApplicationException("Could not execute external search query - DnB returned empty data") : (data, response.StatusCode.ToString(), response.StatusDescription, timestamp);
+    }
+
+    private static (JObject Data, string StatusCode, string ErrorMessage, DateTimeOffset Timestamp)? TryExecuteDunsRequest(RestClient client, string dunsNumber, DnBExternalSearchJobData jobData, string token)
+    {
+        try
+        {
+            return ExecuteDunsRequest(client, dunsNumber, jobData, token);
+        }
+        catch (BadTokenException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return (null, null, ex.Message, DateTimeOffset.UtcNow);
+        }
+    }
+
     private static void AddExtendedMatchParameters(IExternalSearchQuery query, RestRequest request)
     {
+        var registrationNumber = query.QueryParameters.GetValue(DnBConstants.KeyName.RegistrationNumberKey)?.FirstOrDefault();
         var orgStreetAddress1 = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgStreetAddressLine1Key)?.FirstOrDefault();
         var orgStreetAddress2 = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgStreetAddressLine2Key)?.FirstOrDefault();
         var orgPostalCode = query.QueryParameters.GetValue(DnBConstants.KeyName.OrgPostalCodeKey)?.FirstOrDefault();
@@ -284,6 +521,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         var customerReference3 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference3Key)?.FirstOrDefault();
         var customerReference4 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference4Key)?.FirstOrDefault();
         var customerReference5 = query.QueryParameters.GetValue(DnBConstants.KeyName.CustomerReference5Key)?.FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(registrationNumber))
+        {
+            request.AddQueryParameter("registrationNumber", registrationNumber);
+        }
 
         if (!string.IsNullOrWhiteSpace(orgStreetAddress1))
         {
@@ -490,6 +732,23 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         });
 
         var dnbResult = resultItem.Data?.ToObject<DNBResponse>(serializer);
+        var matchCandidateConfidenceCode = resultItem.Data?.SelectToken("matchConfidenceCode")?.Value<long?>();
+
+        if (jobData.IncludeLastApiCallDetails)
+        {
+            var lastApiCallStatusCode = resultItem.Data?.SelectToken("lastApiCallStatusCode")?.ToString();
+            var lastApiCallErrorMessage = resultItem.Data?.SelectToken("lastApiCallErrorMessage")?.ToString();
+            var lastApiCallTimestamp = resultItem.Data?.SelectToken("lastApiCallTimestamp")?.ToString();
+
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.LastApiCallStatusCode] = lastApiCallStatusCode;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.LastApiCallErrorMessage] = lastApiCallErrorMessage;
+            metadata.Properties[StaticDnBVocabulary.BusinessPartner.LastApiCallTimestamp] = lastApiCallTimestamp;
+        }
+
+        if (dnbResult?.organization == null)
+        {
+            return;
+        }
 
         PopulatePrimaryAddresses(metadata, dnbResult);
 
@@ -499,7 +758,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         PopulateManualMappedProperties(context, metadata, resultItem.Data, jobData);
 
-        PopulateConfidenceScore(metadata, dnbResult);
+        PopulateConfidenceScore(metadata, dnbResult, matchCandidateConfidenceCode);
     }
 
     public IEnumerable<EntityType> Accepts(IDictionary<string, object> config, IProvider provider) => Accepts(config);
@@ -792,7 +1051,10 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
                 if (mappingParts.Length != 2) continue;
                 var propertyName = mappingParts[0].Trim();
                 var dnbTokenPath = mappingParts[1].Trim();
-                var tokenValue = dnbResult.SelectToken(dnbTokenPath)?.ToString();
+                var tokenValue = dnbTokenPath.Contains("[*]")
+                    ? string.Join(", ", dnbResult.SelectTokens(dnbTokenPath).Select(x => x.ToString()))
+                    : dnbResult.SelectTokens(dnbTokenPath).FirstOrDefault()?.ToString();
+
                 if (!string.IsNullOrEmpty(tokenValue))
                 {
                     metadata.Properties[propertyName] = tokenValue;
@@ -804,9 +1066,10 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         }
     }
 
-    private static void PopulateConfidenceScore(IEntityMetadata metadata, DNBResponse dnbResult)
+    private static void PopulateConfidenceScore(IEntityMetadata metadata, DNBResponse dnbResult, long? matchCandidateConfidenceCode)
     {
-        var matchCandidateConfidenceCode = dnbResult?.matchCandidates?.FirstOrDefault()?.matchQualityInformation?.confidenceCode;
+        matchCandidateConfidenceCode ??= dnbResult?.matchCandidates?.FirstOrDefault()?.matchQualityInformation?.confidenceCode;
+
         var confidenceScore = 100;
 
         // Match candidate confidence code ranges from 1 (low) to 10 (high).

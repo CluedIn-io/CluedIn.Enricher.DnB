@@ -8,9 +8,13 @@ public class DnBExternalSearchJobData : CrawlJobData
     public DnBExternalSearchJobData(IDictionary<string, object> configuration)
     {
         AcceptedEntityType = GetValue<string>(configuration, DnBConstants.KeyName.AcceptedEntityType);
+        IdentityResolutionApi = GetValue<string>(configuration, DnBConstants.KeyName.IdentityResolutionApi);
+        GetDataUsingMatchesDuns = GetValue<bool>(configuration, DnBConstants.KeyName.GetDataUsingMatchesDuns);
+        IncludeLastApiCallDetails = GetValue<bool>(configuration, DnBConstants.KeyName.IncludeLastApiCallDetails);
         PropertyMappings = GetValue<string>(configuration, DnBConstants.KeyName.PropertyMappings);
         OrgNameKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgNameKey);
         DunsNumberKey = GetValue<string>(configuration, DnBConstants.KeyName.DunsNumberKey);
+        RegistrationNumberKey = GetValue<string>(configuration, DnBConstants.KeyName.RegistrationNumberKey);
         OrgCountryCodeKey = GetValue<string>(configuration, DnBConstants.KeyName.OrgCountryCodeKey);
         OrgStreetAddressLine1 = GetValue<string>(configuration, DnBConstants.KeyName.OrgStreetAddressLine1Key);
         OrgStreetAddressLine2 = GetValue<string>(configuration, DnBConstants.KeyName.OrgStreetAddressLine2Key);
@@ -54,7 +58,11 @@ public class DnBExternalSearchJobData : CrawlJobData
         return new Dictionary<string, object>
         {
             { DnBConstants.KeyName.AcceptedEntityType, AcceptedEntityType },
+            { DnBConstants.KeyName.IdentityResolutionApi, IdentityResolutionApi },
+            { DnBConstants.KeyName.GetDataUsingMatchesDuns, GetDataUsingMatchesDuns },
+            { DnBConstants.KeyName.IncludeLastApiCallDetails, IncludeLastApiCallDetails },
             { DnBConstants.KeyName.PropertyMappings, PropertyMappings},
+            { DnBConstants.KeyName.RegistrationNumberKey, RegistrationNumberKey },
             { DnBConstants.KeyName.OrgNameKey, OrgNameKey },
             { DnBConstants.KeyName.DunsNumberKey, DunsNumberKey },
             { DnBConstants.KeyName.OrgCountryCodeKey, OrgCountryCodeKey },
@@ -96,9 +104,13 @@ public class DnBExternalSearchJobData : CrawlJobData
     }
 
     public string AcceptedEntityType { get; set; }
+    public string IdentityResolutionApi { get; set; }
+    public bool GetDataUsingMatchesDuns { get; set; }
+    public bool IncludeLastApiCallDetails { get; set; }
     public string PropertyMappings { get; set; }
     public string OrgNameKey { get; set; }
     public string DunsNumberKey { get; set; }
+    public string RegistrationNumberKey { get; set; }
     public string OrgCountryCodeKey { get; set; }
     public string OrgStreetAddressLine1 { get; set; }
     public string OrgStreetAddressLine2 { get; set; }
