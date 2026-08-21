@@ -516,7 +516,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             Thread.Sleep(TimeSpan.FromSeconds(60));
         }
 
-        return null;
+        throw new WebException("TooManyRequests");
     }
 
     private static void AddExtendedMatchParameters(IExternalSearchQuery query, RestRequest request)
