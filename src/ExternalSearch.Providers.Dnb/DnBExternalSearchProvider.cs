@@ -237,7 +237,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var requestResource = isCleanseApi
                 ? "match/cleanseMatch"
                 : "match/extendedMatch";
-            request = new RestRequest(requestResource, Method.GET);
+            request = new RestRequest(requestResource, Method.Get);
             request.AddQueryParameter("name", orgName);
             request.AddQueryParameter("countryISOAlpha2Code", orgCountryCode);
 
@@ -437,7 +437,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     private static (JObject Data, string StatusCode, string ErrorMessage, DateTimeOffset Timestamp) ExecuteDunsRequest(RestClient client, string dunsNumber, DnBExternalSearchJobData jobData, string token)
     {
         var requestResource = $"data/duns/{dunsNumber}";
-        var request = new RestRequest(requestResource, Method.GET);
+        var request = new RestRequest(requestResource, Method.Get);
 
         if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
         {
@@ -655,11 +655,8 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var secret = jobData.AuthSecret;
             var bytes = Encoding.ASCII.GetBytes($"{key}:{secret}");
 
-            var restClient = new RestClient(jobData.AuthUrl)
-            {
-                Timeout = -1
-            };
-            var request = new RestRequest(Method.POST);
+            var restClient = new RestClient(new RestClientOptions(jobData.AuthUrl) { Timeout = Timeout.InfiniteTimeSpan } );
+            var request = new RestRequest { Method = Method.Post };
             request.AddHeader("Content-Type", "application/json");
             request.AddHeader("Authorization", $"Basic {Convert.ToBase64String(bytes)}");
             var body = jobData.AuthRequestBody;
@@ -1112,7 +1109,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var client = new RestClient(jobData.DnBBaseUrl);
 
             const string dunsRequestResource = $"data/duns/{dummyDunsNumber}";
-            var dunsRequest = new RestRequest(dunsRequestResource, Method.GET);
+            var dunsRequest = new RestRequest(dunsRequestResource, Method.Get);
             dunsRequest.AddHeader("Authorization", $"Bearer {token}");
 
             if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
@@ -1130,7 +1127,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             }
 
             const string requestResource = "match/extendedMatch";
-            var extendedMatchRequest = new RestRequest(requestResource, Method.GET);
+            var extendedMatchRequest = new RestRequest(requestResource, Method.Get);
             if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
             {
                 extendedMatchRequest.AddQueryParameter("versionId", jobData.VersionId);
@@ -1172,7 +1169,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         return new ConnectionVerificationResult(true);
     }
 
-    private static ConnectionVerificationResult ConstructFailedConnectionResponse(IRestResponse response, DNBResponse data)
+    private static ConnectionVerificationResult ConstructFailedConnectionResponse(RestResponse response, DNBResponse data)
     {
         var errorMessageBase = $"{DnBConstants.ProviderName} returned \"{(int)response.StatusCode} {response.StatusDescription}\".";
 
