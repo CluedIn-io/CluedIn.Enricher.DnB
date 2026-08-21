@@ -264,7 +264,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         request.AddHeader("Authorization", $"Bearer {token}");
 
-        var cleanseResponse = client.ExecuteAsync(request).GetAwaiter().GetResult();
+        var cleanseResponse = ExecuteWithRateLimitHandling(client, request);
         var cleanseTimestamp = DateTimeOffset.UtcNow;
         var data = JsonUtility.Deserialize<JObject>(cleanseResponse.Content, new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore });
 
@@ -451,7 +451,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         request.AddHeader("Authorization", $"Bearer {token}");
 
-        var response = client.ExecuteAsync(request).GetAwaiter().GetResult();
+        var response = ExecuteWithRateLimitHandling(client, request);
         var timestamp = DateTimeOffset.UtcNow;
 
         if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -495,6 +495,28 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         {
             return (null, null, ex.Message, DateTimeOffset.UtcNow);
         }
+    }
+
+    private static IRestResponse ExecuteWithRateLimitHandling(RestClient client, RestRequest request, int maxRetries = 3)
+    {
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            var result = client.ExecuteAsync(request).GetAwaiter().GetResult();
+
+            if (result.StatusCode != HttpStatusCode.TooManyRequests)
+            {
+                return result;
+            }
+
+            if (attempt == maxRetries)
+            {
+                throw new WebException("TooManyRequests");
+            }
+
+            Thread.Sleep(TimeSpan.FromSeconds(60));
+        }
+
+        throw new WebException("TooManyRequests");
     }
 
     private static void AddExtendedMatchParameters(IExternalSearchQuery query, RestRequest request)
@@ -792,7 +814,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     {
         var jobData = new DnBExternalSearchJobData(config);
 
-        foreach (var externalSearchQueryResult in InternalExecuteSearch(context, query, jobData)) yield return externalSearchQueryResult;
+        return ActionExtensions.ExecuteWithRetry(
+            () => InternalExecuteSearch(context, query, jobData).ToArray(),
+            retryCount: 1000,
+            isTransient: ex => ex.IsTransient() || ex.ToString().Contains("TooManyRequests")
+        );
     }
 
     public IEnumerable<Clue> BuildClues(ExecutionContext context, IExternalSearchQuery query, IExternalSearchQueryResult result, IExternalSearchRequest request, IDictionary<string, object> config, IProvider provider)
