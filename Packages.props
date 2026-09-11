@@ -1,6 +1,6 @@
 <Project>
 	<PropertyGroup Label="Dependency Versions">
-		<_CluedIn>5.0.0-*</_CluedIn>
+		<_CluedIn Condition="'$(_CluedIn)' == ''">5.0.0-*</_CluedIn>
 		<_Humanizer>2.14.1</_Humanizer>
 	</PropertyGroup>
 
