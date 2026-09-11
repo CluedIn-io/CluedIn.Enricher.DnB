@@ -48,6 +48,16 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
     private static readonly EntityType[] DefaultAcceptedEntityTypes = { EntityType.Organization };
     private static readonly SemaphoreSlim semaphore = new(1, 1);
+
+    // RestSharp 106.x (CluedIn 4.7/4.8, net6.0) uses uppercase Method.GET/POST; RestSharp 114.x
+    // (CluedIn 5.0+, net10.0) uses PascalCase Method.Get/Post.
+#if CLUEDIN_V50
+    private const Method HttpGetMethod = Method.Get;
+    private const Method HttpPostMethod = Method.Post;
+#else
+    private const Method HttpGetMethod = Method.GET;
+    private const Method HttpPostMethod = Method.POST;
+#endif
     /**********************************************************************************************************
      * CONSTRUCTORS
      **********************************************************************************************************/
@@ -237,7 +247,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var requestResource = isCleanseApi
                 ? "match/cleanseMatch"
                 : "match/extendedMatch";
-            request = new RestRequest(requestResource, Method.Get);
+            request = new RestRequest(requestResource, HttpGetMethod);
             request.AddQueryParameter("name", orgName);
             request.AddQueryParameter("countryISOAlpha2Code", orgCountryCode);
 
@@ -463,7 +473,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
     private static (JObject Data, string StatusCode, string ErrorMessage, DateTimeOffset Timestamp) ExecuteDunsRequest(RestClient client, string dunsNumber, DnBExternalSearchJobData jobData, string token)
     {
         var requestResource = $"data/duns/{dunsNumber}";
-        var request = new RestRequest(requestResource, Method.Get);
+        var request = new RestRequest(requestResource, HttpGetMethod);
 
         if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
         {
@@ -523,7 +533,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         }
     }
 
+#if CLUEDIN_V50
     private static RestResponse ExecuteWithRateLimitHandling(RestClient client, RestRequest request, int maxRetries = 3)
+#else
+    private static IRestResponse ExecuteWithRateLimitHandling(RestClient client, RestRequest request, int maxRetries = 3)
+#endif
     {
         for (var attempt = 0; attempt <= maxRetries; attempt++)
         {
@@ -703,8 +717,14 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var secret = jobData.AuthSecret;
             var bytes = Encoding.ASCII.GetBytes($"{key}:{secret}");
 
-            var restClient = new RestClient(new RestClientOptions(jobData.AuthUrl) { Timeout = Timeout.InfiniteTimeSpan } );
-            var request = new RestRequest { Method = Method.Post };
+            // RestClientOptions (107+) doesn't exist on RestSharp 106.x; its RestClient.Timeout is a
+            // millisecond int, not a TimeSpan.
+#if CLUEDIN_V50
+            var restClient = new RestClient(new RestClientOptions(jobData.AuthUrl) { Timeout = Timeout.InfiniteTimeSpan });
+#else
+            var restClient = new RestClient(jobData.AuthUrl) { Timeout = Timeout.Infinite };
+#endif
+            var request = new RestRequest { Method = HttpPostMethod };
             request.AddHeader("Content-Type", "application/json");
             request.AddHeader("Authorization", $"Basic {Convert.ToBase64String(bytes)}");
             var body = jobData.AuthRequestBody;
@@ -1161,7 +1181,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             var client = new RestClient(jobData.DnBBaseUrl);
 
             const string dunsRequestResource = $"data/duns/{dummyDunsNumber}";
-            var dunsRequest = new RestRequest(dunsRequestResource, Method.Get);
+            var dunsRequest = new RestRequest(dunsRequestResource, HttpGetMethod);
             dunsRequest.AddHeader("Authorization", $"Bearer {token}");
 
             if (!string.IsNullOrWhiteSpace(jobData.BlockIds))
@@ -1179,7 +1199,7 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             }
 
             const string requestResource = "match/extendedMatch";
-            var extendedMatchRequest = new RestRequest(requestResource, Method.Get);
+            var extendedMatchRequest = new RestRequest(requestResource, HttpGetMethod);
             if (!string.IsNullOrWhiteSpace(jobData.VersionId) && !string.IsNullOrWhiteSpace(jobData.ProductId))
             {
                 extendedMatchRequest.AddQueryParameter("versionId", jobData.VersionId);
@@ -1221,7 +1241,11 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
         return new ConnectionVerificationResult(true);
     }
 
+#if CLUEDIN_V50
     private static ConnectionVerificationResult ConstructFailedConnectionResponse(RestResponse response, DNBResponse data)
+#else
+    private static ConnectionVerificationResult ConstructFailedConnectionResponse(IRestResponse response, DNBResponse data)
+#endif
     {
         var errorMessageBase = $"{DnBConstants.ProviderName} returned \"{(int)response.StatusCode} {response.StatusDescription}\".";
 
@@ -1251,4 +1275,4 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
 
         return new ConnectionVerificationResult(false, "This could be due to breaking changes in the external system");
     }
-}
+}
