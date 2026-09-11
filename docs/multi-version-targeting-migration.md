@@ -121,6 +121,15 @@ pipeline's actual pinned `GitVersion.Tool 5.9.0` (installed to a scratch tool-pa
 
 ---
 
+## Step 6 — Push and confirm CI
+
+Status: **Done**
+
+Fully green on the **first push** — PR #52, build 151998: all three `Multi-version build+test` legs
+(4.7.0, 4.8.0, 5.0.0-beta.*) and `Multi-version: publish` passed.
+
+---
+
 ## Checklist
 
 - [x] `azure-pipelines.yml` — switched to `crawler.build.jobs.yml`; pool switched to `ubuntu-22.04`
@@ -129,5 +138,5 @@ pipeline's actual pinned `GitVersion.Tool 5.9.0` (installed to a scratch tool-pa
 - [x] Source — `#if CLUEDIN_V50` guards for the RestSharp 106↔114 break (5 call sites + 3 signature/construction guards)
 - [x] `GitVersion.yml` — `next-version: 1.0`; `commits-before: 2026-09-07T00:00:00`; verified `1.0.0` with pinned GitVersion.Tool 5.9.0
 - [x] All three legs build clean locally (0 errors), verified via real `dotnet restore`/`build`
-- [ ] Push branch and confirm the actual Azure DevOps pipeline run is green end-to-end
+- [x] Pushed branch and confirmed the Azure DevOps pipeline is green end-to-end — PR #52, build 151998: all three legs + `Multi-version: publish` passed on the first run
 - [ ] **Follow-up for a human:** consider rotating/removing the hardcoded PATs in this repo's `NuGet.config` in favor of `NuGetAuthenticate@0`
