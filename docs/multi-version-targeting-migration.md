@@ -140,3 +140,24 @@ Fully green on the **first push** — PR #52, build 151998: all three `Multi-ver
 - [x] All three legs build clean locally (0 errors), verified via real `dotnet restore`/`build`
 - [x] Pushed branch and confirmed the Azure DevOps pipeline is green end-to-end — PR #52, build 151998: all three legs + `Multi-version: publish` passed on the first run
 - [ ] **Follow-up for a human:** consider rotating/removing the hardcoded PATs in this repo's `NuGet.config` in favor of `NuGetAuthenticate@0`
+
+---
+
+## Addendum — version baseline moved from 1.0.0 to 100.0.0
+
+Status: **Done**
+
+The CluedIn version is now carried entirely by the package suffix (`.470`/`.480`/`.500`), not by
+this repo's own `next-version` number, so that number moved again, from `1.0` to `100.0`. Reason:
+repos that were previously at 4.x/5.x under the old single-version-targeting scheme would appear to
+"go backwards" if their next version showed as `1.0.0` — `100.0.0` is unambiguously higher than any
+prior single-version release number this repo ever had.
+
+Unlike the original `1.0` reset, no `commits-before`/`ignore` trick is needed this time:
+`next-version` only needs help overriding an existing tag when the configured value is *lower* than
+that tag, and `100.0` is already higher than every pre-existing tag here. Removed the
+`ignore.commits-before` line entirely (this repo's `ignore:` block had no `sha`, so the whole block
+was removed).
+
+Verified with a real local `dotnet-gitversion` run: `MajorMinorPatch` resolves to `"100.0.0"`.
+`docs/1.0.0-release-notes.md` renamed to `docs/100.0.0-release-notes.md`.
