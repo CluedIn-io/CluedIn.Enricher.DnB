@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-	  <LangVersion>preview</LangVersion>
-  </PropertyGroup>
   <ItemGroup>
 	  <Compile Remove="Provider.ExternalSearch.DnB\**" />
 	  <EmbeddedResource Remove="Provider.ExternalSearch.DnB\**" />
