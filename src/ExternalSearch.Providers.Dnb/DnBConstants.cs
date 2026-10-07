@@ -129,6 +129,78 @@ public static class DnBConstants
 
     public static readonly Dictionary<string, IdentityResolutionAPI> SupportedIdentityResolutionAPIs = CreateSupportedIdentityResolutionAPIs();
 
+    // The vocabulary keys that describe a company for a match by name. The name and the country are required, the rest improves the match.
+    private static readonly string[] NameMatchRequiredFields =
+    [
+        KeyName.OrgNameKey,
+        KeyName.OrgCountryCodeKey,
+    ];
+
+    private static readonly string[] NameMatchFields =
+    [
+        .. NameMatchRequiredFields,
+        KeyName.RegistrationNumberKey,
+        KeyName.OrgStreetAddressLine1Key,
+        KeyName.OrgStreetAddressLine2Key,
+        KeyName.OrgPostalCodeKey,
+        KeyName.OrgAddressLocalityKey,
+        KeyName.OrgAddressCountyKey,
+        KeyName.OrgAddressRegionKey,
+        KeyName.OrgTelephoneNumberKey,
+        KeyName.OrgUrlKey,
+        KeyName.OrgEmailKey,
+    ];
+
+    // D&B only returns data when the request names the data product: a version and product ID together, or block IDs.
+    private static readonly string[][] DataProductRequiredAnyOf =
+    [
+        [KeyName.VersionId, KeyName.ProductId],
+        [KeyName.BlockIds],
+    ];
+
+    private static Dictionary<string, object> CreateNameMatchStrategy(string id, IdentityResolutionAPI api) => new()
+    {
+        ["id"] = id,
+        ["label"] = $"Name match ({api.Label})",
+        ["description"] = $"Find the company by its name and country, then enrich it. {api.Description}. " +
+            "Also requires either a Match and Append version and product ID, or a block ID, otherwise no query will be run.",
+        ["fields"] = NameMatchFields,
+        ["requiredFields"] = NameMatchRequiredFields,
+        ["requiredAnyOf"] = DataProductRequiredAnyOf,
+        ["settings"] = new Dictionary<string, object> { [KeyName.IdentityResolutionApi] = api.Value.ToLowerInvariant() },
+        ["options"] = new[]
+        {
+            new Dictionary<string, object>
+            {
+                ["setting"] = KeyName.GetDataUsingMatchesDuns,
+                ["label"] = "Get the full data using the matched DUNS",
+                ["description"] = "After a match, call the DUNS API with the matched DUNS number to retrieve the full company data. This uses one more API call for each record.",
+                ["default"] = false,
+            },
+        },
+    };
+
+    /// <summary>
+    /// The ways this enricher can be set up, so the UI can let the user choose one. Each strategy lists the vocabulary key
+    /// fields it uses, which of them are required, and the settings it implies. It only guides the configuration:
+    /// at run time the enricher still picks the query by which keys have a value on the record.
+    /// </summary>
+    public static readonly Dictionary<string, object>[] EnrichmentStrategies =
+    [
+        new()
+        {
+            ["id"] = "duns",
+            ["label"] = "DUNS number",
+            ["description"] = "Enrich the company directly with its DUNS number. No other record input is needed, but a Match and Append version and product ID, or a block ID, must be configured for D&B to return the data.",
+            ["fields"] = new[] { KeyName.DunsNumberKey },
+            ["requiredFields"] = new[] { KeyName.DunsNumberKey },
+            ["requiredAnyOf"] = DataProductRequiredAnyOf,
+            ["settings"] = new Dictionary<string, object>(),
+        },
+        CreateNameMatchStrategy("cleanseMatch", SupportedIdentityResolutionAPIs["CleanseMatch"]),
+        CreateNameMatchStrategy("extendedMatch", SupportedIdentityResolutionAPIs["ExtendedMatch"]),
+    ];
+
     public static IEnumerable<Control> Properties { get; set; } = new List<Control>
     {
         new()

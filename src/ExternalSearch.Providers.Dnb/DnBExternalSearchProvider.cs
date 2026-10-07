@@ -435,16 +435,6 @@ public class DnBExternalSearchProvider : ExternalSearchProviderBase, IExtendedEn
             yield break;
         }
 
-        // If includeLastApiCallDetails is true, we return the error details in the result instead of throwing an exception
-        if (includeLastApiCallDetails)
-        {
-            yield return new ExternalSearchQueryResult<JObject>(query, CreateLastApiCallErrorData(
-                cleanseResponse.StatusCode.ToString(),
-                cleanseResponseError ?? cleanseResponse.ErrorException?.Message ?? cleanseResponse.StatusDescription,
-                cleanseTimestamp));
-            yield break;
-        }
-
         if (cleanseResponse.ErrorException != null)
         {
             throw new AggregateException(cleanseResponse.ErrorException.Message, cleanseResponse.ErrorException);

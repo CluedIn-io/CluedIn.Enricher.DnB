@@ -134,5 +134,6 @@ public class DnBSearchProviderProvider : ProviderBase, IExtendedProviderMetadata
         { "vocabKeyPrefix", StaticDnBVocabulary.BusinessPartner.KeyPrefix },
         { "autoSubmission", false },
         { "dataSourceSetId", string.Empty },
+        { "enrichmentStrategies", DnBConstants.EnrichmentStrategies }, // for UI
     };
 }
