@@ -282,7 +282,7 @@ public static class DnBConstants
         },
         new()
         {
-            DisplayName = "Organization Url Vocabulary Key",
+            DisplayName = "Organization URL Vocabulary Key",
             Type = "vocabularyKeySelector",
             IsRequired = false,
             Name = KeyName.OrgUrlKey
@@ -473,7 +473,7 @@ public static class DnBConstants
         {
             new()
             {
-                DisplayName = "Auth Url",
+                DisplayName = "Auth URL",
                 Type = "input",
                 IsRequired = true,
                 Name = KeyName.AuthUrl,
@@ -509,7 +509,7 @@ public static class DnBConstants
             },
             new()
             {
-                DisplayName = "DnB Base Url",
+                DisplayName = "DnB Base URL",
                 Type = "input",
                 IsRequired = true,
                 Name = KeyName.DnBBaseUrl
