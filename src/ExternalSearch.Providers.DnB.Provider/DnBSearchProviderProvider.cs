@@ -135,5 +135,6 @@ public class DnBSearchProviderProvider : ProviderBase, IExtendedProviderMetadata
         { "autoSubmission", false },
         { "dataSourceSetId", string.Empty },
         { "enrichmentStrategies", DnBConstants.EnrichmentStrategies }, // for UI
+        { "fieldGroups", DnBConstants.FieldGroups }, // for UI
     };
 }
