@@ -129,6 +129,149 @@ public static class DnBConstants
 
     public static readonly Dictionary<string, IdentityResolutionAPI> SupportedIdentityResolutionAPIs = CreateSupportedIdentityResolutionAPIs();
 
+    // The vocabulary keys that describe a company for a match by name. The name and the country are required, the rest improves the match.
+    private static readonly string[] NameMatchRequiredFields =
+    [
+        KeyName.OrgNameKey,
+        KeyName.OrgCountryCodeKey,
+    ];
+
+    private static readonly string[] NameMatchFields =
+    [
+        .. NameMatchRequiredFields,
+        KeyName.RegistrationNumberKey,
+        KeyName.OrgStreetAddressLine1Key,
+        KeyName.OrgStreetAddressLine2Key,
+        KeyName.OrgPostalCodeKey,
+        KeyName.OrgAddressLocalityKey,
+        KeyName.OrgAddressCountyKey,
+        KeyName.OrgAddressRegionKey,
+        KeyName.OrgTelephoneNumberKey,
+        KeyName.OrgUrlKey,
+        KeyName.OrgEmailKey,
+    ];
+
+    // D&B only returns data when the request names the data product: a version and product ID together, or block IDs.
+    private static readonly string[][] DataProductRequiredAnyOf =
+    [
+        [KeyName.VersionId, KeyName.ProductId],
+        [KeyName.BlockIds],
+    ];
+
+    private static Dictionary<string, object> CreateNameMatchStrategy(string id, IdentityResolutionAPI api) => new()
+    {
+        ["id"] = id,
+        ["label"] = $"Name match ({api.Label})",
+        ["description"] = $"Find the company by its name and country, then enrich it. {api.Description}. " +
+            "Also requires either a Match and Append version and product ID, or a block ID, otherwise no query will be run.",
+        ["fields"] = NameMatchFields,
+        ["requiredFields"] = NameMatchRequiredFields,
+        ["requiredAnyOf"] = DataProductRequiredAnyOf,
+        ["settings"] = new Dictionary<string, object> { [KeyName.IdentityResolutionApi] = api.Value.ToLowerInvariant() },
+        ["options"] = new[]
+        {
+            new Dictionary<string, object>
+            {
+                ["setting"] = KeyName.GetDataUsingMatchesDuns,
+                ["label"] = "Get the full data using the matched DUNS",
+                ["description"] = "After a match, call the DUNS API with the matched DUNS number to retrieve the full company data. This uses one more API call for each record.",
+                ["default"] = false,
+            },
+        },
+    };
+
+    /// <summary>
+    /// The ways this enricher can be set up, so the UI can let the user choose one. Each strategy lists the vocabulary key
+    /// fields it uses, which of them are required, and the settings it implies. It only guides the configuration:
+    /// at run time the enricher still picks the query by which keys have a value on the record.
+    /// </summary>
+    public static readonly Dictionary<string, object>[] EnrichmentStrategies =
+    [
+        new()
+        {
+            ["id"] = "duns",
+            ["label"] = "DUNS number",
+            ["description"] = "Enrich the company directly with its DUNS number. No other record input is needed, but a Match and Append version and product ID, or a block ID, must be configured for D&B to return the data.",
+            ["fields"] = new[] { KeyName.DunsNumberKey },
+            ["requiredFields"] = new[] { KeyName.DunsNumberKey },
+            ["requiredAnyOf"] = DataProductRequiredAnyOf,
+            ["settings"] = new Dictionary<string, object>(),
+        },
+        CreateNameMatchStrategy("cleanseMatch", SupportedIdentityResolutionAPIs["CleanseMatch"]),
+        CreateNameMatchStrategy("extendedMatch", SupportedIdentityResolutionAPIs["ExtendedMatch"]),
+    ];
+
+    private static Dictionary<string, object> CreateFieldGroup(string id, string label, params string[] fields) => new()
+    {
+        ["id"] = id,
+        ["label"] = label,
+        ["fields"] = fields,
+    };
+
+    /// <summary>
+    /// The sections the UI groups the configuration fields into, in order. Fields no group lists
+    /// (such as the filter and rate limit settings added by CluedIn) go to the last group.
+    /// </summary>
+    public static readonly Dictionary<string, object>[] FieldGroups =
+    [
+        CreateFieldGroup(
+            "connection",
+            "Connection",
+            KeyName.AuthUrl,
+            KeyName.AuthKey,
+            KeyName.AuthSecret,
+            KeyName.DnBBaseUrl,
+            KeyName.AuthRequestBody,
+            KeyName.IdentityResolutionApi),
+        CreateFieldGroup(
+            "dataProduct",
+            "Data product",
+            KeyName.VersionId,
+            KeyName.ProductId,
+            KeyName.BlockIds),
+        CreateFieldGroup(
+            "whatToEnrich",
+            "What to enrich",
+            KeyName.AcceptedEntityType,
+            "enricherRuleCondition"),
+        CreateFieldGroup(
+            "fieldMapping",
+            "Field mapping",
+            KeyName.DunsNumberKey,
+            KeyName.OrgNameKey,
+            KeyName.OrgCountryCodeKey,
+            KeyName.RegistrationNumberKey,
+            KeyName.OrgStreetAddressLine1Key,
+            KeyName.OrgStreetAddressLine2Key,
+            KeyName.OrgPostalCodeKey,
+            KeyName.OrgAddressLocalityKey,
+            KeyName.OrgAddressCountyKey,
+            KeyName.OrgAddressRegionKey,
+            KeyName.OrgTelephoneNumberKey,
+            KeyName.OrgUrlKey,
+            KeyName.OrgEmailKey),
+        CreateFieldGroup(
+            "advanced",
+            "Advanced",
+            KeyName.GetDataUsingMatchesDuns,
+            KeyName.IncludeLastApiCallDetails,
+            KeyName.PropertyMappings,
+            KeyName.CandidateMaximumQuantityKey,
+            KeyName.ConfidenceLowerLevelThresholdValueKey,
+            KeyName.ExclusionCriteriaKey,
+            KeyName.IsCleanseAndStandardizeInformationRequiredKey,
+            KeyName.TradeUpKey,
+            KeyName.OrderReasonKey,
+            KeyName.CustomerBillingEndorsementKey,
+            KeyName.CustomerReference1Key,
+            KeyName.CustomerReference2Key,
+            KeyName.CustomerReference3Key,
+            KeyName.CustomerReference4Key,
+            KeyName.CustomerReference5Key,
+            KeyName.IndustryCodesKey,
+            KeyName.RegistrationNumbersKey),
+    ];
+
     public static IEnumerable<Control> Properties { get; set; } = new List<Control>
     {
         new()
@@ -210,7 +353,7 @@ public static class DnBConstants
         },
         new()
         {
-            DisplayName = "Organization Url Vocabulary Key",
+            DisplayName = "Organization URL Vocabulary Key",
             Type = "vocabularyKeySelector",
             IsRequired = false,
             Name = KeyName.OrgUrlKey
@@ -336,38 +479,38 @@ public static class DnBConstants
             Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
             Name = KeyName.CustomerReference5Key
         },
-        new()
-        {
-            DisplayName = "Industry Code Types",
-            Type = "input",
-            IsRequired = false,
-            Name = KeyName.IndustryCodesKey,
-            Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788).",
-            ValidationRules = new List<Dictionary<string, string>>
-            {
-                new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
-            },
-            Options = new Dictionary<string, object>
-            {
-                { "defaultValue", string.Empty }
-            }
-        },
-        new()
-        {
-            DisplayName = "Registration Number Types",
-            Type = "input",
-            IsRequired = false,
-            Name = KeyName.RegistrationNumbersKey,
-            Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444).",
-            ValidationRules = new List<Dictionary<string, string>>
-            {
-                new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
-            },
-            Options = new Dictionary<string, object>
-            {
-                { "defaultValue", string.Empty }
-            }
-        },
+        //new()
+        //{
+        //    DisplayName = "Industry Code Types",
+        //    Type = "input",
+        //    IsRequired = false,
+        //    Name = KeyName.IndustryCodesKey,
+        //    Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788).",
+        //    ValidationRules = new List<Dictionary<string, string>>
+        //    {
+        //        new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+        //    },
+        //    Options = new Dictionary<string, object>
+        //    {
+        //        { "defaultValue", string.Empty }
+        //    }
+        //},
+        //new()
+        //{
+        //    DisplayName = "Registration Number Types",
+        //    Type = "input",
+        //    IsRequired = false,
+        //    Name = KeyName.RegistrationNumbersKey,
+        //    Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444).",
+        //    ValidationRules = new List<Dictionary<string, string>>
+        //    {
+        //        new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+        //    },
+        //    Options = new Dictionary<string, object>
+        //    {
+        //        { "defaultValue", string.Empty }
+        //    }
+        //},
         // Match and Append 
         new()
         {
@@ -390,7 +533,7 @@ public static class DnBConstants
             DisplayName = $"Match and Append {KeyName.BlockIds}",
             Type = "input",
             IsRequired = false,
-            Help = "The block ID provided by Dun & Bradstreet that identifies the data block to be returned.",
+            Help = "The block ID provided by Dun & Bradstreet that identifies the data block to be returned (e.g., `companyinfo_L3_v1,hierarchyconnections_L1_v1`). See [where to get block IDs](https://directplus.documentation.dnb.com/DataBlocks.html).",
             Name = KeyName.BlockIds
         }
     };
@@ -401,7 +544,7 @@ public static class DnBConstants
         {
             new()
             {
-                DisplayName = "Auth Url",
+                DisplayName = "Auth URL",
                 Type = "input",
                 IsRequired = true,
                 Name = KeyName.AuthUrl,
@@ -437,10 +580,14 @@ public static class DnBConstants
             },
             new()
             {
-                DisplayName = "DnB Base Url",
+                DisplayName = "DnB Base URL",
                 Type = "input",
                 IsRequired = true,
-                Name = KeyName.DnBBaseUrl
+                Name = KeyName.DnBBaseUrl,
+                Options = new Dictionary<string, object>()
+                {
+                    { "defaultValue", "https://plus.dnb.com/v1" }
+                }
             },
             new()
             {
