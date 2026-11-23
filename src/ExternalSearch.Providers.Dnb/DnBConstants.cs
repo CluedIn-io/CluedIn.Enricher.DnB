@@ -268,8 +268,7 @@ public static class DnBConstants
             KeyName.CustomerReference3Key,
             KeyName.CustomerReference4Key,
             KeyName.CustomerReference5Key,
-            KeyName.IndustryCodesKey,
-            KeyName.RegistrationNumbersKey),
+            KeyName.CustomerReference5Key),
     ];
 
     public static IEnumerable<Control> Properties { get; set; } = new List<Control>
