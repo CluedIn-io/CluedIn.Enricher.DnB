@@ -268,7 +268,8 @@ public static class DnBConstants
             KeyName.CustomerReference3Key,
             KeyName.CustomerReference4Key,
             KeyName.CustomerReference5Key,
-            KeyName.CustomerReference5Key),
+            KeyName.IndustryCodesKey,
+            KeyName.RegistrationNumbersKey),
     ];
 
     public static IEnumerable<Control> Properties { get; set; } = new List<Control>
@@ -478,39 +479,40 @@ public static class DnBConstants
             Help = "A free form reference string to be linked to the request in order to support subsequent order reconciliation.",
             Name = KeyName.CustomerReference5Key
         },
-        //new()
-        //{
-        //    DisplayName = "Industry Code Types",
-        //    Type = "input",
-        //    IsRequired = false,
-        //    Name = KeyName.IndustryCodesKey,
-        //    Help = "The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788).",
-        //    ValidationRules = new List<Dictionary<string, string>>
-        //    {
-        //        new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
-        //    },
-        //    Options = new Dictionary<string, object>
-        //    {
-        //        { "defaultValue", string.Empty }
-        //    }
-        //},
-        //new()
-        //{
-        //    DisplayName = "Registration Number Types",
-        //    Type = "input",
-        //    IsRequired = false,
-        //    Name = KeyName.RegistrationNumbersKey,
-        //    Help = "The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444).",
-        //    ValidationRules = new List<Dictionary<string, string>>
-        //    {
-        //        new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
-        //    },
-        //    Options = new Dictionary<string, object>
-        //    {
-        //        { "defaultValue", string.Empty }
-        //    }
-        //},
-        // Match and Append 
+        // Legacy: still read by the provider so existing configurations keep working, but they should no longer be used.
+        new()
+        {
+            DisplayName = "Industry Code Types (Legacy)",
+            Type = "input",
+            IsRequired = false,
+            Name = KeyName.IndustryCodesKey,
+            Help = "Legacy setting, avoid using it. The TypeDnBCode values that will determine which industry codes are returned in the result. (e.g., 19295,37788).",
+            ValidationRules = new List<Dictionary<string, string>>
+            {
+                new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+            },
+            Options = new Dictionary<string, object>
+            {
+                { "defaultValue", string.Empty }
+            }
+        },
+        new()
+        {
+            DisplayName = "Registration Number Types (Legacy)",
+            Type = "input",
+            IsRequired = false,
+            Name = KeyName.RegistrationNumbersKey,
+            Help = "Legacy setting, avoid using it. The TypeDnBCode values that will determine which registration numbers are returned in the result (e.g., 12897,12444).",
+            ValidationRules = new List<Dictionary<string, string>>
+            {
+                new() { { "regex", "[^0-9,]" }, { "message", "Non-numeric values are not allowed." } }
+            },
+            Options = new Dictionary<string, object>
+            {
+                { "defaultValue", string.Empty }
+            }
+        },
+        // Match and Append
         new()
         {
             DisplayName = $"Match and Append {KeyName.VersionId}",
